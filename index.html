@@ -450,7 +450,42 @@ async function cargarDatosGlobal(){
   totalGeneral.textContent = "Total Venta: $" + total.toLocaleString();
   loading.textContent = "";
 }
+async function cargarDatosB41(){
 
+  loading.textContent = "Cargando datos BODEGA 41...";
+
+  const { data, error } = await supabase.rpc("ventas_departamento_b41");
+
+  if(error){
+    console.error(error);
+    loading.textContent = "Error cargando datos B41";
+    return;
+  }
+
+  tablaBody.innerHTML = "";
+  let total = 0;
+
+  data.forEach(row=>{
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>
+        <span style="cursor:pointer; color:#00416A; font-weight:600;">
+          ${row.departamento}
+        </span>
+      </td>
+      <td>${Number(row.cantidad_vendida).toLocaleString()}</td>
+      <td>$${Number(row.costo_compra_total).toLocaleString()}</td>
+      <td>$${Number(row.venta_total).toLocaleString()}</td>
+    `;
+
+    tablaBody.appendChild(tr);
+    total += Number(row.venta_total);
+  });
+
+  totalGeneral.textContent = "Total Venta: $" + total.toLocaleString();
+  loading.textContent = "";
+}
 async function cargarTopGlobal(){
 
   const { data, error } = await supabase.rpc("top_articulos_global");
@@ -543,8 +578,8 @@ async function cargarTopGlobal(){
 }
 
 cargarSucursales().then(()=>{
-  cargarDatos("TODAS LAS SUCURSALES");
-  cargarTopArticulos("TODAS LAS SUCURSALES");
+  cargarDatosGlobal();
+  cargarTopGlobal();
 });
 sucursalSelect.addEventListener("change", () => {
 
@@ -556,8 +591,9 @@ if(sucursal === "GLOBAL"){
     cargarDatos("TODAS LAS SUCURSALES");
     cargarTopArticulos("TODAS LAS SUCURSALES");
 } else if (sucursal === "BODEGA 41") {
-    cargarDatos("BODEGA 41"); // o crea otra función si usas tabla distinta
-    cargarTopArticulos("BODEGA 41");
+    cargarDatosB41();
+    // Si tienes función top específica:
+    // cargarTopB41();
 } else {
     cargarDatos(sucursal);
     cargarTopArticulos(sucursal);
@@ -648,14 +684,23 @@ async function generarReporte(){
 doc.text("RESUMEN POR DEPARTAMENTO", 14, y);
 y += 6;
 
-const { data: deptos, error: errorDeptos } = await supabase.rpc(
-  sucursal === "GLOBAL"
-    ? "ventas_global_departamento"
-    : "ventas_por_departamento",
-  sucursal === "GLOBAL"
-    ? {}
-    : { sucursal_param: sucursal }
-);
+let deptos;
+let errorDeptos;
+
+if(sucursal === "GLOBAL"){
+  ({ data: deptos, error: errorDeptos } = 
+    await supabase.rpc("ventas_global_departamento"));
+}
+else if(sucursal === "BODEGA 41"){
+  ({ data: deptos, error: errorDeptos } = 
+    await supabase.rpc("ventas_departamento_b41"));
+}
+else{
+  ({ data: deptos, error: errorDeptos } = 
+    await supabase.rpc("ventas_por_departamento", {
+      sucursal_param: sucursal
+    }));
+}
 
 if(errorDeptos || !deptos){
   alert("Error obteniendo departamentos");
@@ -746,14 +791,22 @@ doc.setFontSize(14);
 doc.text("TOP ARTÍCULOS", 14, y);
 y += 6;
 
-const { data: articulos } = await supabase.rpc(
-  sucursal === "GLOBAL"
-    ? "top_articulos_global"
-    : "top_articulos_sucursal",
-  sucursal === "GLOBAL"
-    ? {}
-    : { sucursal_param: sucursal }
-);
+let articulos;
+
+if(sucursal === "GLOBAL"){
+  ({ data: articulos } = 
+    await supabase.rpc("top_articulos_global"));
+}
+else if(sucursal === "BODEGA 41"){
+  ({ data: articulos } = 
+    await supabase.rpc("top_articulos_b41"));
+}
+else{
+  ({ data: articulos } = 
+    await supabase.rpc("top_articulos_sucursal", {
+      sucursal_param: sucursal
+    }));
+}
 
 if(articulos && articulos.length){
 
