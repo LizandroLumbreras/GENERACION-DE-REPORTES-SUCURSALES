@@ -1,170 +1,187 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <head>
+
 <link rel="icon" href="data:,">
 <meta charset="UTF-8">
-<title>PROVSOFT · Dashboard Ventas</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>PROVSOFT · Dashboard Ventas</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
+
 :root{
-  --azul1:#00416A;
-  --azul2:#0c6cbd;
-  --gris:#f4f6f9;
-  --card:#ffffff;
-  --radius:14px;
-  --shadow:0 8px 24px rgba(0,0,0,.18);
+ --azul1:#00416A;
+ --azul2:#0c6cbd;
+ --gris:#f4f6f9;
+ --card:#ffffff;
+ --radius:14px;
+ --shadow:0 8px 24px rgba(0,0,0,.18);
 }
 
-*{box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+*{
+ box-sizing:border-box;
+ font-family:'Segoe UI',sans-serif;
+}
 
 body{
-  margin:0;
-  background:linear-gradient(135deg,var(--azul1),var(--azul2));
-  padding:30px;
+ margin:0;
+ background:linear-gradient(135deg,var(--azul1),var(--azul2));
+ padding:30px;
 }
 
 h1{
-  color:#fff;
-  text-align:center;
-  margin-bottom:30px;
+ color:#fff;
+ text-align:center;
+ margin-bottom:30px;
 }
 
 .container{
-  background:var(--gris);
-  padding:25px;
-  border-radius:var(--radius);
+ background:var(--gris);
+ padding:25px;
+ border-radius:var(--radius);
 }
 
 select{
-  padding:10px;
-  font-size:16px;
-  border-radius:8px;
-  border:none;
-  margin-bottom:20px;
+ padding:10px;
+ font-size:16px;
+ border-radius:8px;
+ border:none;
+ margin-bottom:20px;
 }
 
 .card-total{
-  background:var(--card);
-  padding:20px;
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  margin-bottom:20px;
-  font-size:18px;
-  font-weight:bold;
+ background:var(--card);
+ padding:20px;
+ border-radius:var(--radius);
+ box-shadow:var(--shadow);
+ margin-bottom:20px;
+ font-size:18px;
+ font-weight:bold;
 }
 
 table{
-  width:100%;
-  border-collapse:collapse;
-  background:var(--card);
-  border-radius:var(--radius);
-  overflow:hidden;
-  box-shadow:var(--shadow);
+ width:100%;
+ border-collapse:collapse;
+ background:var(--card);
+ border-radius:var(--radius);
+ overflow:hidden;
+ box-shadow:var(--shadow);
 }
 
 th{
-  background:var(--azul1);
-  color:#fff;
-  padding:12px;
-  text-align:left;
+ background:var(--azul1);
+ color:#fff;
+ padding:12px;
+ text-align:left;
 }
 
 td{
-  padding:10px;
-  border-bottom:1px solid #eee;
+ padding:10px;
+ border-bottom:1px solid #eee;
 }
 
 tr:hover{
-  background:#f1f1f1;
+ background:#f1f1f1;
 }
 
 .loading{
-  color:#fff;
-  text-align:center;
-  margin-top:15px;
+ color:#fff;
+ text-align:center;
+ margin-top:15px;
 }
+
 .lista-item{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  background:#fff;
-  padding:10px 15px;
-  border-radius:10px;
-  margin-bottom:8px;
-  box-shadow:0 2px 6px rgba(0,0,0,.08);
-  font-size:14px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ background:#fff;
+ padding:10px 15px;
+ border-radius:10px;
+ margin-bottom:8px;
+ box-shadow:0 2px 6px rgba(0,0,0,.08);
+ font-size:14px;
 }
 
 .color-box{
-  width:14px;
-  height:14px;
-  border-radius:4px;
-  margin-right:10px;
+ width:14px;
+ height:14px;
+ border-radius:4px;
+ margin-right:10px;
 }
 
 .item-left{
-  display:flex;
-  align-items:center;
-  gap:10px;
+ display:flex;
+ align-items:center;
+ gap:10px;
 }
 
 .item-right{
-  font-weight:bold;
+ font-weight:bold;
 }
+
 .modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.55);
-  display:none;
-  justify-content:center;
-  align-items:center;
-  z-index:999;
+ position:fixed;
+ inset:0;
+ background:rgba(0,0,0,.55);
+ display:none;
+ justify-content:center;
+ align-items:center;
+ z-index:999;
 }
 
 .modal-content{
-  background:#fff;
-  width:420px;
-  max-width:90%;
-  border-radius:16px;
-  padding:20px;
-  box-shadow:0 20px 50px rgba(0,0,0,.3);
-  animation:fadeIn .25s ease;
+ background:#fff;
+ width:420px;
+ max-width:90%;
+ border-radius:16px;
+ padding:20px;
+ box-shadow:0 20px 50px rgba(0,0,0,.3);
+ animation:fadeIn .25s ease;
 }
 
 @keyframes fadeIn{
-  from{transform:scale(.95);opacity:0}
-  to{transform:scale(1);opacity:1}
+ from{
+  transform:scale(.95);
+  opacity:0
+ }
+ to{
+  transform:scale(1);
+  opacity:1
+ }
 }
 
 .modal-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:15px;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ margin-bottom:15px;
 }
 
 .modal-header h3{
-  margin:0;
+ margin:0;
 }
 
 .modal-header button{
-  background:none;
-  border:none;
-  font-size:18px;
-  cursor:pointer;
+ background:none;
+ border:none;
+ font-size:18px;
+ cursor:pointer;
 }
 
 .cliente-item{
-  display:flex;
-  justify-content:space-between;
-  padding:8px 0;
-  border-bottom:1px solid #eee;
+ display:flex;
+ justify-content:space-between;
+ padding:8px 0;
+ border-bottom:1px solid #eee;
 }
+
 </style>
+
 </head>
 <body>
 
@@ -173,816 +190,781 @@ tr:hover{
 <div class="container">
 
 <select id="sucursalSelect">
-  <option value="GLOBAL" selected>TODAS LAS SUCURSALES</option>
+<option value="GLOBAL" selected>TODAS LAS SUCURSALES</option>
+</select>
+
+<select id="mesSelect">
+<option value="TODOS">TODO EL AÑO</option>
 </select>
 
 <div class="card-total" id="totalGeneral">
-  Total Venta: $0
+Total Venta: $0
 </div>
 
-<button id="btnReporte" style="
-  background:#00416A;
-  color:white;
-  padding:10px 18px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  margin-bottom:20px;
+<button id="btnReporte"
+style="
+background:#00416A;
+color:white;
+padding:10px 18px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+margin-bottom:20px;
 ">
 📄 Generar Reporte Ejecutivo
 </button>
 <table>
-  <thead>
-    <tr>
+
+<thead>
+<tr>
 <th>Departamento</th>
 <th>Cantidad Vendida</th>
 <th>Costo Compra</th>
 <th>Venta Total</th>
-    </tr>
-  </thead>
-  <tbody id="tablaBody"></tbody>
-</table>
+</tr>
+</thead>
 
+<tbody id="tablaBody"></tbody>
+
+</table>
 <h2 style="margin-top:40px;">Top Artículos Más Vendidos</h2>
 
 <table>
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Código</th>
-      <th>Descripción</th>
-      <th>Piezas</th>
-      <th>Total Vendido</th>
-    </tr>
-  </thead>
-  <tbody id="tablaTop"></tbody>
+
+<thead>
+<tr>
+<th>#</th>
+<th>Código</th>
+<th>Descripción</th>
+<th>Piezas</th>
+<th>Total Vendido</th>
+</tr>
+</thead>
+
+<tbody id="tablaTop"></tbody>
+
 </table>
-
-
 <h2 style="margin-top:40px;">Participación de Venta</h2>
+
 <canvas id="graficaPastel" height="120"></canvas>
+
 <div id="listaParticipacion" style="margin-top:25px;"></div>
 
 </div>
 
 <div class="loading" id="loading"></div>
-
 <script type="module">
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const SUPA_URL = "https://cvpbtjlupswbyxenugpz.supabase.co";
-const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2cGJ0amx1cHN3Ynl4ZW51Z3B6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDIxOTQsImV4cCI6MjA2MzI3ODE5NH0.iiJsYM3TtaGPdeCtPcEXwAz3LfFc1uJGECEvOErvrqY";  // <-- PON TU KEY
+
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2cGJ0amx1cHN3Ynl4ZW51Z3B6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDIxOTQsImV4cCI6MjA2MzI3ODE5NH0.iiJsYM3TtaGPdeCtPcEXwAz3LfFc1uJGECEvOErvrqY";
 
 const supabase = createClient(SUPA_URL, SUPA_KEY);
 
 const sucursalSelect = document.getElementById("sucursalSelect");
+const mesSelect = document.getElementById("mesSelect");
+
 const tablaBody = document.getElementById("tablaBody");
 const tablaTop = document.getElementById("tablaTop");
+
 const ctx = document.getElementById("graficaPastel").getContext("2d");
+
 let grafica = null;
+
 const totalGeneral = document.getElementById("totalGeneral");
 const loading = document.getElementById("loading");
-
 async function cargarSucursales(){
 
-  const { data, error } = await supabase.rpc("obtener_sucursales");
+ const { data, error } = await supabase.rpc("obtener_sucursales");
 
-  if(error){
-    console.error(error);
-    return;
-  }
+ if(error){
+  console.error(error);
+  return;
+ }
 
-sucursalSelect.innerHTML = `
-  <option value="GLOBAL">TODAS LAS SUCURSALES</option>
-  <option value="BODEGA 41">BODEGA 41</option>
+ sucursalSelect.innerHTML = `
+<option value="GLOBAL">TODAS LAS SUCURSALES</option>
+<option value="BODEGA 41">BODEGA 41</option>
 `;
 
-  data.forEach(row=>{
-    const option = document.createElement("option");
-    option.value = row.sucursal;
-    option.textContent = row.sucursal;
-    sucursalSelect.appendChild(option);
-  });
+ data.forEach(row=>{
+
+  const option = document.createElement("option");
+
+  option.value = row.sucursal;
+  option.textContent = row.sucursal;
+
+  sucursalSelect.appendChild(option);
+
+ });
+
 }
+async function cargarMeses(){
 
+ const { data, error } = await supabase.rpc("obtener_meses_disponibles");
 
+ if(error){
+  console.error(error);
+  return;
+ }
+
+ mesSelect.innerHTML = `<option value="TODOS">TODO EL AÑO</option>`;
+
+ data.forEach(row=>{
+
+  const option = document.createElement("option");
+
+  option.value = row.mes;
+
+  const [anio, mes] = row.mes.split("-");
+
+  const nombreMes = new Date(anio, mes - 1)
+  .toLocaleString("es-MX",{ month:"long" });
+
+  option.textContent = `${nombreMes.toUpperCase()} ${anio}`;
+
+  mesSelect.appendChild(option);
+
+ });
+
+}
 async function cargarDatos(sucursal){
 
-  loading.textContent = "Cargando datos...";
+ loading.textContent = "Cargando datos...";
 
-  const { data, error } = await supabase.rpc("ventas_por_departamento", {
-    sucursal_param: sucursal
-  });
+ const { data, error } = await supabase.rpc("ventas_por_departamento",{
+  sucursal_param: sucursal,
+  mes_param: mesSelect.value
+ });
 
-  if(error){
-    console.error(error);
-    loading.textContent = "Error cargando datos";
-    return;
-  }
+ if(error){
+  console.error(error);
+  loading.textContent = "Error cargando datos";
+  return;
+ }
 
-  tablaBody.innerHTML = "";
-  let total = 0;
+ tablaBody.innerHTML = "";
 
-data.forEach((row)=>{
+ let total = 0;
+
+ data.forEach((row)=>{
+
   const tr = document.createElement("tr");
 
   tr.innerHTML = `
-    <td class="departamento-click" data-depto="${row.departamento}">
-  <span style="cursor:pointer; color:#00416A; font-weight:600;">
-    ${row.departamento}
-  </span>
+<td class="departamento-click" data-depto="${row.departamento}">
+<span style="cursor:pointer; color:#00416A; font-weight:600;">
+${row.departamento}
+</span>
 </td>
-    <td>${Number(row.cantidad_vendida).toLocaleString()}</td>
-    <td>$${Number(row.costo_compra_total).toLocaleString()}</td>
-    <td>$${Number(row.venta_total).toLocaleString()}</td>
-  `;
+<td>${Number(row.cantidad_vendida).toLocaleString()}</td>
+<td>$${Number(row.costo_compra_total).toLocaleString()}</td>
+<td>$${Number(row.venta_total).toLocaleString()}</td>
+`;
 
   tablaBody.appendChild(tr);
-  total += Number(row.venta_total);
-});
 
-  totalGeneral.textContent = "Total Venta: $" + total.toLocaleString();
-  loading.textContent = "";
+  total += Number(row.venta_total);
+
+ });
+
+ totalGeneral.textContent = "Total Venta: $" + total.toLocaleString();
+
+ loading.textContent = "";
+
 }
 async function cargarTopArticulos(sucursal){
 
-  const { data, error } = await supabase.rpc("top_articulos_sucursal", {
-    sucursal_param: sucursal
-  });
+ const { data, error } = await supabase.rpc("top_articulos_sucursal",{
+  sucursal_param: sucursal,
+  mes_param: mesSelect.value
+ });
 
-  if(error){
-    console.error(error);
-    return;
-  }
+ if(error){
+  console.error(error);
+  return;
+ }
 
-  tablaTop.innerHTML = "";
+ tablaTop.innerHTML = "";
 
-  let labels = [];
-  let valores = [];
+ let labels = [];
+ let valores = [];
 
- data.forEach((row, index)=>{
+ data.forEach((row,index)=>{
 
   const tr = document.createElement("tr");
 
   tr.innerHTML = `
-    <td><strong>#${index + 1}</strong></td>
-    <td>${row.codigo}</td>
-    <td>${row.descripcion || ""}</td>
-    <td>${Number(row.piezas).toLocaleString()}</td>
-    <td>$${Number(row.total_venta).toLocaleString()}</td>
-  `;
+<td><strong>#${index + 1}</strong></td>
+<td>${row.codigo}</td>
+<td>${row.descripcion || ""}</td>
+<td>${Number(row.piezas).toLocaleString()}</td>
+<td>$${Number(row.total_venta).toLocaleString()}</td>
+`;
 
   tablaTop.appendChild(tr);
 
   labels.push((index + 1) + ". " + (row.descripcion || row.codigo));
   valores.push(Number(row.total_venta));
-});
 
-  // 🔹 Crear gráfica pastel
-  if(grafica){
-    grafica.destroy();
-  }
+});
+if(grafica){
+ grafica.destroy();
+}
 
 grafica = new Chart(ctx,{
-  type:"pie",
-  data:{
-    labels: labels,
-    datasets:[{
-      data: valores,
-      backgroundColor:[
-        "#00416A",
-        "#0c6cbd",
-        "#1f77b4",
-        "#2ca02c",
-        "#ff7f0e",
-        "#d62728",
-        "#9467bd",
-        "#17becf",
-        "#bcbd22",
-        "#8c564b",
-        "#e377c2",
-        "#7f7f7f",
-        "#aec7e8",
-        "#98df8a",
-        "#ffbb78"
-      ]
-    }]
-  },
-  options:{
-    responsive:true,
-    plugins:{
-legend:{
-  display:false
-},
-      tooltip:{
-        callbacks:{
-          label:function(context){
-            const total = context.dataset.data.reduce((a,b)=>a+b,0);
-            const valor = context.raw;
-            const porcentaje = ((valor/total)*100).toFixed(2);
-            return `${context.label}: $${valor.toLocaleString()} (${porcentaje}%)`;
-          }
-        }
-      }
+ type:"pie",
+ data:{
+  labels:labels,
+  datasets:[{
+   data:valores,
+   backgroundColor:[
+    "#00416A",
+    "#0c6cbd",
+    "#1f77b4",
+    "#2ca02c",
+    "#ff7f0e",
+    "#d62728",
+    "#9467bd",
+    "#17becf",
+    "#bcbd22",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#aec7e8",
+    "#98df8a",
+    "#ffbb78"
+   ]
+  }]
+ },
+
+ options:{
+  responsive:true,
+  plugins:{
+   legend:{ display:false },
+   tooltip:{
+    callbacks:{
+     label:function(context){
+
+      const total = context.dataset.data.reduce((a,b)=>a+b,0);
+      const valor = context.raw;
+      const porcentaje = ((valor/total)*100).toFixed(2);
+
+      return `${context.label}: $${valor.toLocaleString()} (${porcentaje}%)`;
+
+     }
     }
+   }
   }
+ }
+
 });
-// 🔹 Crear lista personalizada debajo del gráfico
 const listaDiv = document.getElementById("listaParticipacion");
+
 listaDiv.innerHTML = "";
 
 const totalGrafica = valores.reduce((a,b)=>a+b,0);
 
-labels.forEach((label, i)=>{
-  const porcentaje = ((valores[i] / totalGrafica) * 100).toFixed(2);
+labels.forEach((label,i)=>{
 
-  const item = document.createElement("div");
-  item.className = "lista-item";
+ const porcentaje = ((valores[i] / totalGrafica) * 100).toFixed(2);
 
-  item.innerHTML = `
-    <div class="item-left">
-      <div class="color-box" style="background:${grafica.data.datasets[0].backgroundColor[i]};"></div>
-      ${label}
-    </div>
-    <div class="item-right">
-      ${porcentaje}% &nbsp; ($${valores[i].toLocaleString()})
-    </div>
-  `;
+ const item = document.createElement("div");
 
-  listaDiv.appendChild(item);
+ item.className = "lista-item";
+
+ item.innerHTML = `
+<div class="item-left">
+<div class="color-box" style="background:${grafica.data.datasets[0].backgroundColor[i]};"></div>
+${label}
+</div>
+
+<div class="item-right">
+${porcentaje}% &nbsp; ($${valores[i].toLocaleString()})
+</div>
+`;
+
+ listaDiv.appendChild(item);
+
 });
-}
 
+}
 async function cargarDatosGlobal(){
 
-  loading.textContent = "Cargando datos globales...";
+ loading.textContent = "Cargando datos globales...";
 
-  const { data, error } = await supabase.rpc("ventas_global_departamento");
+ const { data, error } = await supabase.rpc("ventas_global_departamento",{
+  mes_param: mesSelect.value
+ });
 
-  if(error){
-    console.error(error);
-    loading.textContent = "Error cargando datos globales";
-    return;
-  }
+ if(error){
+  console.error(error);
+  loading.textContent = "Error cargando datos globales";
+  return;
+ }
 
-  tablaBody.innerHTML = "";
-  let total = 0;
+ tablaBody.innerHTML = "";
 
-  data.forEach(row=>{
-    const tr = document.createElement("tr");
+ let total = 0;
 
-    tr.innerHTML = `
-      <td class="departamento-click" data-depto="${row.departamento}">
-  <span style="cursor:pointer; color:#00416A; font-weight:600;">
-    ${row.departamento}
-  </span>
+ data.forEach(row=>{
+
+  const tr = document.createElement("tr");
+
+  tr.innerHTML = `
+<td class="departamento-click" data-depto="${row.departamento}">
+<span style="cursor:pointer; color:#00416A; font-weight:600;">
+${row.departamento}
+</span>
 </td>
-      <td>${Number(row.cantidad_vendida).toLocaleString()}</td>
-      <td>$${Number(row.costo_compra_total).toLocaleString()}</td>
-      <td>$${Number(row.venta_total).toLocaleString()}</td>
-    `;
 
-    tablaBody.appendChild(tr);
-    total += Number(row.venta_total);
-  });
+<td>${Number(row.cantidad_vendida).toLocaleString()}</td>
+<td>$${Number(row.costo_compra_total).toLocaleString()}</td>
+<td>$${Number(row.venta_total).toLocaleString()}</td>
+`;
 
-  totalGeneral.textContent = "Total Venta: $" + total.toLocaleString();
-  loading.textContent = "";
-}
-async function cargarDatosB41(){
+  tablaBody.appendChild(tr);
 
-  loading.textContent = "Cargando datos BODEGA 41...";
+  total += Number(row.venta_total);
 
-  const { data, error } = await supabase.rpc("ventas_departamento_b41");
-
-  if(error){
-    console.error(error);
-    loading.textContent = "Error cargando datos B41";
-    return;
-  }
-
-  tablaBody.innerHTML = "";
-  let total = 0;
-
-  data.forEach(row=>{
-    const tr = document.createElement("tr");
-
-    tr.innerHTML = `
-      <td>
-        <span style="cursor:pointer; color:#00416A; font-weight:600;">
-          ${row.departamento}
-        </span>
-      </td>
-      <td>${Number(row.cantidad_vendida).toLocaleString()}</td>
-      <td>$${Number(row.costo_compra_total).toLocaleString()}</td>
-      <td>$${Number(row.venta_total).toLocaleString()}</td>
-    `;
-
-    tablaBody.appendChild(tr);
-    total += Number(row.venta_total);
-  });
-
-  totalGeneral.textContent = "Total Venta: $" + total.toLocaleString();
-  loading.textContent = "";
-}
-async function cargarTopGlobal(){
-
-  const { data, error } = await supabase.rpc("top_articulos_global");
-
-  if(error){
-    console.error(error);
-    return;
-  }
-
-  tablaTop.innerHTML = "";
-
-  let labels = [];
-  let valores = [];
-
-  data.forEach((row, index)=>{
-
-    const tr = document.createElement("tr");
-
-    tr.innerHTML = `
-      <td><strong>#${index + 1}</strong></td>
-      <td>${row.codigo}</td>
-      <td>${row.descripcion || ""}</td>
-      <td>${Number(row.piezas).toLocaleString()}</td>
-      <td>$${Number(row.total_venta).toLocaleString()}</td>
-    `;
-
-    tablaTop.appendChild(tr);
-
-    labels.push((index + 1) + ". " + (row.descripcion || row.codigo));
-    valores.push(Number(row.total_venta));
-  });
-
-  if(grafica){
-    grafica.destroy();
-  }
-
-  grafica = new Chart(ctx,{
-    type:"pie",
-    data:{
-      labels: labels,
-      datasets:[{
-        data: valores,
-        backgroundColor:[
-          "#00416A","#0c6cbd","#1f77b4","#2ca02c","#ff7f0e",
-          "#d62728","#9467bd","#17becf","#bcbd22","#8c564b"
-        ]
-      }]
-    },
-    options:{
-      responsive:true,
-      plugins:{
-        legend:{ display:false },
-        tooltip:{
-          callbacks:{
-            label:function(context){
-              const total = context.dataset.data.reduce((a,b)=>a+b,0);
-              const valor = context.raw;
-              const porcentaje = ((valor/total)*100).toFixed(2);
-              return `${context.label}: $${valor.toLocaleString()} (${porcentaje}%)`;
-            }
-          }
-        }
-      }
-    }
-  });
-
-  const listaDiv = document.getElementById("listaParticipacion");
-  listaDiv.innerHTML = "";
-
-  const totalGrafica = valores.reduce((a,b)=>a+b,0);
-
-  labels.forEach((label, i)=>{
-    const porcentaje = ((valores[i] / totalGrafica) * 100).toFixed(2);
-
-    const item = document.createElement("div");
-    item.className = "lista-item";
-
-    item.innerHTML = `
-      <div class="item-left">
-        <div class="color-box" style="background:${grafica.data.datasets[0].backgroundColor[i]};"></div>
-        ${label}
-      </div>
-      <div class="item-right">
-        ${porcentaje}% &nbsp; ($${valores[i].toLocaleString()})
-      </div>
-    `;
-
-    listaDiv.appendChild(item);
-  });
-}
-
-cargarSucursales().then(()=>{
-  cargarDatosGlobal();
-  cargarTopGlobal();
 });
-sucursalSelect.addEventListener("change", () => {
 
-  const sucursal = sucursalSelect.value;
+ totalGeneral.textContent = "Total Venta: $" + total.toLocaleString();
 
-  if(!sucursal) return;
+ loading.textContent = "";
 
-if(sucursal === "GLOBAL"){
-    cargarDatos("TODAS LAS SUCURSALES");
-    cargarTopArticulos("TODAS LAS SUCURSALES");
-} else if (sucursal === "BODEGA 41") {
-    cargarDatosB41();
-    // Si tienes función top específica:
-    // cargarTopB41();
-} else {
-    cargarDatos(sucursal);
-    cargarTopArticulos(sucursal);
 }
+cargarSucursales().then(()=>{
+ cargarMeses();
+ cargarDatosGlobal();
+ cargarTopArticulos("GLOBAL");
+});
+
+sucursalSelect.addEventListener("change",()=>{
+
+ const sucursal = sucursalSelect.value;
+
+ if(!sucursal) return;
+
+ if(sucursal === "GLOBAL"){
+
+  cargarDatosGlobal();
+ cargarTopArticulos("GLOBAL");
+
+ }
+else if(sucursal === "BODEGA 41"){
+
+  cargarDatos("BODEGA 41");
+  cargarTopArticulos("BODEGA 41");
+
+}
+ else{
+
+  cargarDatos(sucursal);
+  cargarTopArticulos(sucursal);
+
+ }
+
+});
+
+mesSelect.addEventListener("change",()=>{
+
+ sucursalSelect.dispatchEvent(new Event("change"));
 
 });
 async function mostrarTopClientes(departamento){
 
-  const sucursalActual = sucursalSelect.value || "GLOBAL";
+ const sucursalActual = sucursalSelect.value || "GLOBAL";
 
-  const { data, error } = await supabase.rpc("top_clientes_departamento",{
-    sucursal_param: sucursalActual,
-    departamento_param: departamento
-  });
+ const { data, error } = await supabase.rpc("top_clientes_departamento",{
 
-  if(error){
-    console.error(error);
-    return;
-  }
+  sucursal_param: sucursalActual,
+  departamento_param: departamento,
+  mes_param: mesSelect.value
 
-  const modal = document.getElementById("modalClientes");
-  const modalBody = document.getElementById("modalBody");
-  const modalTitulo = document.getElementById("modalTitulo");
+ });
 
-  modalTitulo.textContent = `Top 5 Clientes – ${departamento}`;
-  modalBody.innerHTML = "";
+ if(error){
+  console.error(error);
+  return;
+ }
 
-  data.forEach((row, index)=>{
-    const div = document.createElement("div");
-    div.className = "cliente-item";
-    div.innerHTML = `
-      <span>#${index+1} ${row.nombre_cliente}</span>
-      <strong>$${Number(row.total_comprado).toLocaleString()}</strong>
-    `;
-    modalBody.appendChild(div);
-  });
+ const modal = document.getElementById("modalClientes");
+ const modalBody = document.getElementById("modalBody");
+ const modalTitulo = document.getElementById("modalTitulo");
 
-  modal.style.display = "flex";
+ modalTitulo.textContent = `Top 5 Clientes – ${departamento}`;
+
+ modalBody.innerHTML = "";
+
+ data.forEach((row,index)=>{
+
+  const div = document.createElement("div");
+
+  div.className = "cliente-item";
+
+  div.innerHTML = `
+<span>#${index+1} ${row.nombre_cliente}</span>
+<strong>$${Number(row.total_comprado).toLocaleString()}</strong>
+`;
+
+  modalBody.appendChild(div);
+
+ });
+
+ modal.style.display = "flex";
+
 }
-tablaBody.addEventListener("click", (e)=>{
+tablaBody.addEventListener("click",(e)=>{
 
-  const celda = e.target.closest(".departamento-click");
+ const celda = e.target.closest(".departamento-click");
 
-  if(!celda) return;
+ if(!celda) return;
 
-  const departamento = celda.dataset.depto;
+ const departamento = celda.dataset.depto;
 
-  mostrarTopClientes(departamento);
+ mostrarTopClientes(departamento);
 
 });
+
 document.getElementById("cerrarModal").addEventListener("click",()=>{
-  document.getElementById("modalClientes").style.display = "none";
+
+ document.getElementById("modalClientes").style.display = "none";
+
 });
-document.getElementById("btnReporte").addEventListener("click", generarReporte);
+const btnReporte = document.getElementById("btnReporte");
+
+btnReporte.addEventListener("click", generarReporte);
 
 function limpiarTexto(texto){
-  return texto
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // quitar acentos
-    .replace(/[^\w\sÁÉÍÓÚÜÑáéíóúüñ.,-]/g, "") // quitar caracteres raros
-    .replace(/\s+/g, " ") // espacios dobles
-    .trim();
+ return texto
+ .normalize("NFD")
+ .replace(/[\u0300-\u036f]/g,"")
+ .replace(/\s+/g," ")
+ .trim();
 }
 
 async function generarReporte(){
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+ const { jsPDF } = window.jspdf;
 
-  const sucursal = sucursalSelect.value || "GLOBAL";
-  const fecha = new Date().toLocaleString();
+ const doc = new jsPDF();
 
-  let y = 15;
+ const sucursal = sucursalSelect.value || "GLOBAL";
+ const fecha = new Date().toLocaleString();
 
-  doc.setFontSize(16);
-  doc.text("PROVEEDORA DE DULCES Y DESECHABLES", 14, y);
-  y += 8;
+ let y = 15;
 
-  doc.setFontSize(12);
-  doc.text("REPORTE DE VENTAS POR DEPARTAMENTO/TOP/CLIENTES", 14, y);
-  y += 6;
-  doc.text(`SUCURSAL: ${sucursal}`, 14, y);
-  y += 6;
-  doc.text(`FECHA: ${fecha}`, 14, y);
-  y += 10;
+ doc.setFontSize(16);
+ doc.text("PROVEEDORA DE DULCES Y DESECHABLES",14,y);
 
-  doc.setFontSize(14);
-doc.text("RESUMEN POR DEPARTAMENTO", 14, y);
-y += 6;
+ y+=8;
 
-let deptos;
-let errorDeptos;
+ doc.setFontSize(12);
+ doc.text("REPORTE DE VENTAS POR DEPARTAMENTO/TOP/CLIENTES",14,y);
 
-if(sucursal === "GLOBAL"){
-  ({ data: deptos, error: errorDeptos } = 
-    await supabase.rpc("ventas_global_departamento"));
+ y+=6;
+ doc.text(`SUCURSAL: ${sucursal}`,14,y);
+
+ y+=6;
+ doc.text(`FECHA: ${fecha}`,14,y);
+
+ y+=10;
+
+ doc.setFontSize(14);
+ doc.text("RESUMEN POR DEPARTAMENTO",14,y);
+
+ y+=6;
+
+ let deptos;
+
+ if(sucursal === "GLOBAL"){
+
+   const { data } = await supabase.rpc("ventas_global_departamento",{ mes_param: mesSelect.value });
+   deptos = data;
+
+ }else{
+
+   const { data } = await supabase.rpc("ventas_por_departamento",{
+     sucursal_param:sucursal,
+     mes_param:mesSelect.value
+   });
+
+   deptos = data;
+ }
+
+ let totalGeneral = 0;
+
+ deptos.forEach(d=>{
+   totalGeneral += Number(d.venta_total);
+ });
+
+ doc.setFontSize(11);
+ doc.setFont(undefined,"bold");
+
+ doc.text("Departamento",14,y);
+ doc.text("Venta Total",150,y);
+ doc.text("% Venta",195,y,{align:"right"});
+
+ y+=4;
+
+ doc.setFont(undefined,"normal");
+
+ doc.line(14,y,196,y);
+
+ y+=4;
+
+ deptos.forEach(d=>{
+
+   const venta = Number(d.venta_total);
+   const porcentaje = ((venta/totalGeneral)*100).toFixed(2);
+
+   doc.text(String(d.departamento),14,y);
+
+   doc.text(
+    "$"+venta.toLocaleString('es-MX',{minimumFractionDigits:2}),
+    150,
+    y
+   );
+
+   doc.text(
+    porcentaje+"%",
+    195,
+    y,
+    {align:"right"}
+   );
+
+   y+=5;
+
+   if(y>270){
+     doc.addPage();
+     y=15;
+   }
+
+ });
+
+ doc.line(14,y,196,y);
+
+ y+=6;
+
+ doc.setFont(undefined,"bold");
+
+ doc.text("TOTAL GENERAL",14,y);
+
+ doc.text(
+ "$"+totalGeneral.toLocaleString('es-MX',{minimumFractionDigits:2}),
+ 150,
+ y
+ );
+
+ doc.setFont(undefined,"normal");
+
+ y+=10;
+
+ // -------- TOP ARTICULOS --------
+
+ if(y>220){
+   doc.addPage();
+   y=15;
+ }
+
+ doc.setFontSize(14);
+ doc.text("TOP ARTÍCULOS",14,y);
+
+ y+=6;
+
+ let articulos;
+
+ if(sucursal === "GLOBAL"){
+
+   const { data } = await supabase.rpc("top_articulos_global",{ mes_param: mesSelect.value });
+   articulos = data;
+
+ }else{
+
+   const { data } = await supabase.rpc("top_articulos_sucursal",{
+     sucursal_param:sucursal,
+     mes_param:mesSelect.value
+   });
+
+   articulos = data;
+ }
+
+ doc.setFontSize(11);
+ doc.setFont(undefined,"bold");
+
+ doc.text("#",14,y);
+ doc.text("Descripción",25,y);
+ doc.text("Total Vendido",150,y);
+ doc.text("% Venta",195,y,{align:"right"});
+
+ y+=4;
+
+ doc.line(14,y,196,y);
+
+ y+=4;
+
+ doc.setFont(undefined,"normal");
+
+ articulos.slice(0,10).forEach((a,i)=>{
+
+   const total = Number(a.total_venta);
+   const porcentaje = ((total/totalGeneral)*100).toFixed(2);
+
+   const desc = limpiarTexto(a.descripcion || a.codigo);
+
+   doc.text(String(i+1),14,y);
+
+   doc.text(desc.substring(0,55),25,y);
+
+   doc.text(
+    "$"+total.toLocaleString('es-MX',{minimumFractionDigits:2}),
+    150,
+    y
+   );
+
+   doc.text(
+    porcentaje+"%",
+    195,
+    y,
+    {align:"right"}
+   );
+
+   y+=5;
+
+ });
+// -------- TOP GENERAL CLIENTES --------
+
+// espacio extra entre tablas
+y += 20;
+
+// verificar espacio en página
+if (y > 240){
+ doc.addPage();
+ y = 15;
 }
-else if(sucursal === "BODEGA 41"){
-  ({ data: deptos, error: errorDeptos } = 
-    await supabase.rpc("ventas_departamento_b41"));
-}
-else{
-  ({ data: deptos, error: errorDeptos } = 
-    await supabase.rpc("ventas_por_departamento", {
-      sucursal_param: sucursal
-    }));
-}
 
-if(errorDeptos || !deptos){
-  alert("Error obteniendo departamentos");
-  return;
-}
-let totalGeneral = 0;
-deptos.forEach(d => totalGeneral += Number(d.venta_total));
+doc.setFontSize(14);
+doc.text("TOP GENERAL CLIENTES",14,y);
 
-doc.setFontSize(11);
-doc.setFont(undefined, "bold");
-doc.text("Departamento", 14, y);
-doc.text("Venta Total", 150, y);
-doc.text("% Venta", 195, y, { align: "right" });
-y += 4;
-doc.setFont(undefined, "normal");
+y += 10;
 
-// Línea separadora
-doc.line(14, y, 196, y);
-y += 4;
+const { data: clientesGeneral, error: errorClientes } =
+await supabase.rpc(
+ "top_clientes_general",
+ {
+   sucursal_param: sucursal,
+   mes_param: mesSelect.value
+ }
+);
 
-// Filas compactas
-deptos.forEach(d => {
+if(errorClientes){
 
-  const nombreDepto = d.departamento || "SIN NOMBRE";
-  const venta = Number(d.venta_total || 0);
+ doc.text("Error obteniendo clientes",14,y);
+ y += 6;
 
-  doc.text(String(nombreDepto), 14, y);
+}else if(clientesGeneral && clientesGeneral.length){
 
-const porcentajeDepto = totalGeneral > 0
-  ? ((venta / totalGeneral) * 100).toFixed(2)
+ doc.setFontSize(11);
+ doc.setFont(undefined,"bold");
+
+ doc.text("#",14,y);
+ doc.text("No. Cliente",22,y);
+ doc.text("Cliente",45,y);
+ doc.text("Total Comprado",165,y,{align:"right"});
+ doc.text("% Venta",195,y,{align:"right"});
+
+ y += 4;
+
+ doc.line(14,y,196,y);
+
+ y += 4;
+
+ doc.setFont(undefined,"normal");
+
+ clientesGeneral.forEach((c,index)=>{
+
+  const nombreCliente = limpiarTexto(
+    String(c.nombre_cliente ?? "SIN NOMBRE")
+  );
+
+  const totalCliente = Number(c.total_comprado ?? 0);
+
+  const porcentaje =
+  totalGeneral > 0
+  ? ((totalCliente / totalGeneral) * 100).toFixed(2)
   : "0.00";
 
-doc.text(
-  "$" + Number(venta).toLocaleString('es-MX', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }),
-  150,
-  y
-);
+  const textoCorto =
+  nombreCliente.length > 40
+  ? nombreCliente.substring(0,40) + "..."
+  : nombreCliente;
 
-doc.text(
-  porcentajeDepto + "%",
-  195,
-  y,
-  { align: "right" }
-);
+  const numeroCliente = c.numero_cliente || "-";
+
+  doc.text(String(index + 1),14,y);
+  doc.text(String(numeroCliente),22,y);
+  doc.text(textoCorto,45,y);
+
+  doc.text(
+   "$" + totalCliente.toLocaleString('es-MX',{
+    minimumFractionDigits:2
+   }),
+   165,
+   y,
+   {align:"right"}
+  );
+
+  doc.text(
+   porcentaje + "%",
+   195,
+   y,
+   {align:"right"}
+  );
 
   y += 5;
 
   if(y > 270){
-    doc.addPage();
-    y = 15;
+   doc.addPage();
+   y = 15;
   }
 
-});
+ });
 
-// Línea final
-doc.line(14, y, 196, y);
-y += 6;
+ doc.line(14,y,196,y);
 
-// Total en negritas
-doc.setFont(undefined, "bold");
-doc.text("TOTAL GENERAL", 14, y);
-
-doc.text(
-  "$" + Number(totalGeneral).toLocaleString('es-MX', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }),
-  150,
-  y,
-  { align: "right" }
-);
-
-doc.setFont(undefined, "normal");
-y += 10;
-
-  y += 10;
-
-// 🔹 Verificar espacio antes de TOP ARTÍCULOS
-if (y > 220) {   // puedes ajustar a 210 si quieres más margen
-  doc.addPage();
-  y = 15;
-}
-
-doc.setFontSize(14);
-doc.text("TOP ARTÍCULOS", 14, y);
-y += 6;
-
-let articulos;
-
-if(sucursal === "GLOBAL"){
-  ({ data: articulos } = 
-    await supabase.rpc("top_articulos_global"));
-}
-else if(sucursal === "BODEGA 41"){
-  ({ data: articulos } = 
-    await supabase.rpc("top_articulos_b41"));
-}
-else{
-  ({ data: articulos } = 
-    await supabase.rpc("top_articulos_sucursal", {
-      sucursal_param: sucursal
-    }));
-}
-
-if(articulos && articulos.length){
-
-  // Encabezados
-  doc.setFontSize(11);
-  doc.setFont(undefined, "bold");
-
-doc.text("#", 14, y);
-doc.text("Descripción", 25, y);
-doc.text("Total Vendido", 150, y);
-doc.text("% Venta", 195, y, { align: "right" });
-
-  y += 4;
-
-  // Línea separadora
-  doc.line(14, y, 196, y);
-  y += 4;
-
-  doc.setFont(undefined, "normal");
-
-  articulos.slice(0,10).forEach((a, index)=>{
-
-    const descripcion = String(a?.descripcion ?? a?.codigo ?? "SIN DESCRIPCIÓN");
-    const totalVenta = Number(a?.total_venta ?? 0);
-
-    doc.text(String(index + 1), 14, y);
-
-    // Limitar texto largo
-    const textoCorto = descripcion.length > 55
-      ? descripcion.substring(0,55) + "..."
-      : descripcion;
-
-    doc.text(textoCorto, 25, y);
-
-const porcentajeArticulo = totalGeneral > 0
-  ? ((totalVenta / totalGeneral) * 100).toFixed(2)
-  : "0.00";
-
-doc.text(
-  "$" + Number(totalVenta).toLocaleString('es-MX', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }),
-  150,
-  y
-);
-
-doc.text(
-  porcentajeArticulo + "%",
-  195,
-  y,
-  { align: "right" }
-);
-
-    y += 5;
-
-    if(y > 270){
-      doc.addPage();
-      y = 15;
-    }
-
-  });
-
-  // Línea final
-  doc.line(14, y, 196, y);
-  y += 8;
+ y += 8;
 
 }else{
 
-  doc.text("Sin artículos disponibles", 14, y);
-  y += 6;
+ doc.text("Sin clientes disponibles",14,y);
+ y += 6;
 
 }
+ doc.save(`Reporte_${sucursal}.pdf`);
 
-y += 10;
-
-doc.setFontSize(14);
-y += 10;
-
-doc.setFontSize(14);
-doc.text("TOP GENERAL CLIENTES", 14, y);
-y += 8;
-
-// 🔹 Obtener top general clientes
-const { data: clientesGeneral, error: errorClientes } = await supabase.rpc(
-  "top_clientes_general",
-  { sucursal_param: sucursal }
-);
-
-if(errorClientes){
-  console.log("ERROR CLIENTES:", errorClientes);
-  doc.text("Error obteniendo clientes", 14, y);
-  y += 6;
-}
-else if(clientesGeneral && clientesGeneral.length){
-
-  doc.setFontSize(11);
-  doc.setFont(undefined, "bold");
-
-doc.text("#", 14, y);
-doc.text("No. Cliente", 22, y);
-doc.text("Cliente", 45, y);
-doc.text("Total Comprado", 140, y);
-doc.text("% Venta", 195, y, { align: "right" });
-
-  y += 4;
-  doc.line(14, y, 196, y);
-  y += 4;
-
-  doc.setFont(undefined, "normal");
-
-  clientesGeneral.forEach((c, index)=>{
-
-const nombreCliente = limpiarTexto(
-  String(c.nombre_cliente ?? "SIN NOMBRE")
-);
-    const totalCliente = Number(c.total_comprado ?? 0);
-
-    const porcentaje = totalGeneral > 0
-      ? ((totalCliente / totalGeneral) * 100).toFixed(2)
-      : "0.00";
-
-    const textoCorto = nombreCliente.length > 40
-      ? nombreCliente.substring(0,40) + "..."
-      : nombreCliente;
-
-const numeroCliente = c.numero_cliente || "-";
-
-doc.text(String(index + 1), 14, y);
-doc.text(String(numeroCliente), 22, y);
-doc.text(textoCorto, 45, y);
-
-doc.text(
-  "$" + totalCliente.toLocaleString('es-MX', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }),
-  165,
-  y,
-  { align: "right" }
-);
-
-    doc.text(
-      porcentaje + "%",
-      195,
-      y,
-      { align: "right" }
-    );
-
-    y += 5;
-
-    if(y > 270){
-      doc.addPage();
-      y = 15;
-    }
-
-  });
-
-  doc.line(14, y, 196, y);
-  y += 8;
-
-} else {
-  doc.text("Sin clientes disponibles", 14, y);
-  y += 6;
-}
-doc.save(`Reporte_${sucursal}.pdf`);
 }
 </script>
+
 <div id="modalClientes" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 id="modalTitulo">Top 5 Clientes</h3>
-      <button id="cerrarModal">✕</button>
-    </div>
-    <div id="modalBody"></div>
-  </div>
+
+<div class="modal-content">
+
+<div class="modal-header">
+
+<h3 id="modalTitulo">Top 5 Clientes</h3>
+
+<button id="cerrarModal">✕</button>
+
 </div>
+
+<div id="modalBody"></div>
+
+</div>
+
+</div>
+
 </body>
 </html>
