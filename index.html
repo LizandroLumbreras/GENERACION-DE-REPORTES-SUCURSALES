@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
 
+<head>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<head>
+
 
 <link rel="icon" href="data:,">
 <meta charset="UTF-8">
@@ -218,9 +220,12 @@ margin-bottom:20px;
 <thead>
 <tr>
 <th>Departamento</th>
-<th>Cantidad Vendida</th>
 <th>Costo Compra</th>
+<th>Subtotal</th>
+<th>IVA</th>
+<th>IEPS</th>
 <th>Venta Total</th>
+<th>Utilidad</th>
 </tr>
 </thead>
 
@@ -230,19 +235,33 @@ margin-bottom:20px;
 <h2 style="margin-top:40px;">Top Artículos Más Vendidos</h2>
 
 <table>
-
 <thead>
 <tr>
 <th>#</th>
 <th>Código</th>
 <th>Descripción</th>
-<th>Piezas</th>
 <th>Total Vendido</th>
 </tr>
 </thead>
 
 <tbody id="tablaTop"></tbody>
+</table>
 
+
+<h2 style="margin-top:40px;">Top General Clientes</h2>
+
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>No. Cliente</th>
+<th>Cliente</th>
+<th>Total Comprado</th>
+<th>% Venta</th>
+</tr>
+</thead>
+
+<tbody id="tablaTopClientes"></tbody>
 </table>
 <h2 style="margin-top:40px;">Participación de Venta</h2>
 
@@ -255,6 +274,8 @@ margin-bottom:20px;
 <div class="loading" id="loading"></div>
 <script type="module">
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const SUPA_URL = "https://cvpbtjlupswbyxenugpz.supabase.co";
@@ -262,6 +283,20 @@ const SUPA_URL = "https://cvpbtjlupswbyxenugpz.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2cGJ0amx1cHN3Ynl4ZW51Z3B6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDIxOTQsImV4cCI6MjA2MzI3ODE5NH0.iiJsYM3TtaGPdeCtPcEXwAz3LfFc1uJGECEvOErvrqY";
 
 const supabase = createClient(SUPA_URL, SUPA_KEY);
+
+const firebaseConfig = {
+ apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
+ authDomain: "inventariopv-643f1.firebaseapp.com",
+ projectId: "inventariopv-643f1",
+ storageBucket: "inventariopv-643f1.firebasestorage.app",
+ messagingSenderId: "96242533231",
+ appId: "1:96242533231:web:aae75a18fbaf9840529e9a"
+};
+
+const appFirebase = initializeApp(firebaseConfig);
+const db = getFirestore(appFirebase);
+
+let impuestosDepartamentos = {};
 
 const sucursalSelect = document.getElementById("sucursalSelect");
 const mesSelect = document.getElementById("mesSelect");
@@ -275,26 +310,54 @@ let grafica = null;
 
 const totalGeneral = document.getElementById("totalGeneral");
 const loading = document.getElementById("loading");
+async function cargarImpuestos(){
+
+ const snapshot = await getDocs(collection(db,"departamentos_venta"));
+
+ snapshot.forEach((doc)=>{
+
+  const data = doc.data();
+
+  impuestosDepartamentos[data.nombre] = {
+   iva: Number(data.iva || 0),
+   ieps: Number(data.ieps || 0)
+  };
+
+ });
+
+ console.log("Impuestos cargados:", impuestosDepartamentos);
+
+}
+
 async function cargarSucursales(){
 
  const { data, error } = await supabase.rpc("obtener_sucursales");
+ console.log(data);
 
  if(error){
-  console.error(error);
+  console.error("Error sucursales:", error);
   return;
  }
 
  sucursalSelect.innerHTML = `
 <option value="GLOBAL">TODAS LAS SUCURSALES</option>
-<option value="BODEGA 41">BODEGA 41</option>
 `;
+
+ if(!data || data.length === 0){
+  console.warn("No hay sucursales");
+  return;
+ }
 
  data.forEach(row=>{
 
+  const sucursal = row.sucursal || row.nombre || row.nombre_sucursal;
+
+  if(!sucursal) return;
+
   const option = document.createElement("option");
 
-  option.value = row.sucursal;
-  option.textContent = row.sucursal;
+  option.value = sucursal;
+  option.textContent = sucursal;
 
   sucursalSelect.appendChild(option);
 
@@ -349,26 +412,49 @@ async function cargarDatos(sucursal){
 
  let total = 0;
 
- data.forEach((row)=>{
+data.forEach((row)=>{
 
-  const tr = document.createElement("tr");
+const venta = Number(row.venta_total);
+const costo = Number(row.costo_compra_total);
+const impuesto = impuestosDepartamentos[row.departamento] || {iva:0,ieps:0};
 
-  tr.innerHTML = `
+
+let iva = 0;
+let ieps = 0;
+
+if(impuesto.iva === 16){
+ iva = venta - (venta / 1.16);
+}
+
+if(impuesto.ieps === 8){
+ ieps = venta - (venta / 1.08);
+}
+
+const subtotal = venta - iva - ieps;
+const utilidad = subtotal - costo;
+
+ const tr = document.createElement("tr");
+
+ tr.innerHTML = `
 <td class="departamento-click" data-depto="${row.departamento}">
 <span style="cursor:pointer; color:#00416A; font-weight:600;">
 ${row.departamento}
 </span>
 </td>
-<td>${Number(row.cantidad_vendida).toLocaleString()}</td>
-<td>$${Number(row.costo_compra_total).toLocaleString()}</td>
-<td>$${Number(row.venta_total).toLocaleString()}</td>
+
+<td>$${costo.toLocaleString()}</td>
+<td>$${subtotal.toLocaleString('es-MX',{minimumFractionDigits:2})}</td>
+<td>$${iva.toLocaleString('es-MX',{minimumFractionDigits:2})}</td>
+<td>$${ieps.toLocaleString('es-MX',{minimumFractionDigits:2})}</td>
+<td>$${venta.toLocaleString()}</td>
+<td>$${utilidad.toLocaleString('es-MX',{minimumFractionDigits:2})}</td>
 `;
 
-  tablaBody.appendChild(tr);
+ tablaBody.appendChild(tr);
 
-  total += Number(row.venta_total);
+ total += venta;
 
- });
+});
 
  totalGeneral.textContent = "Total Venta: $" + total.toLocaleString();
 
@@ -396,11 +482,10 @@ async function cargarTopArticulos(sucursal){
 
   const tr = document.createElement("tr");
 
-  tr.innerHTML = `
+tr.innerHTML = `
 <td><strong>#${index + 1}</strong></td>
 <td>${row.codigo}</td>
 <td>${row.descripcion || ""}</td>
-<td>${Number(row.piezas).toLocaleString()}</td>
 <td>$${Number(row.total_venta).toLocaleString()}</td>
 `;
 
@@ -491,6 +576,52 @@ ${porcentaje}% &nbsp; ($${valores[i].toLocaleString()})
 });
 
 }
+async function cargarTopClientesGeneral(sucursal){
+
+const { data, error } = await supabase.rpc(
+ "top_clientes_general",
+ {
+  sucursal_param: sucursal,
+  mes_param: mesSelect.value
+ }
+);
+
+if(error){
+ console.error(error);
+ return;
+}
+
+const tabla = document.getElementById("tablaTopClientes");
+
+tabla.innerHTML = "";
+
+const totalClientes = data.reduce(
+ (acc,r)=> acc + Number(r.total_comprado),
+ 0
+);
+
+data.forEach((row,index)=>{
+
+ const tr = document.createElement("tr");
+;
+
+const porcentaje = totalClientes > 0
+ ? ((Number(row.total_comprado) / totalClientes) * 100).toFixed(2)
+ : "0.00";
+
+ tr.innerHTML = `
+<td><strong>#${index+1}</strong></td>
+<td>${row.numero_cliente || "-"}</td>
+<td>${row.nombre_cliente || "SIN NOMBRE"}</td>
+<td>$${Number(row.total_comprado).toLocaleString()}</td>
+<td>${porcentaje}%</td>
+`;
+
+ tabla.appendChild(tr);
+
+});
+
+}
 async function cargarDatosGlobal(){
 
  loading.textContent = "Cargando datos globales...";
@@ -509,25 +640,48 @@ async function cargarDatosGlobal(){
 
  let total = 0;
 
- data.forEach(row=>{
+data.forEach((row)=>{
 
-  const tr = document.createElement("tr");
+const venta = Number(row.venta_total);
+const costo = Number(row.costo_compra_total);
 
-  tr.innerHTML = `
+const impuesto = impuestosDepartamentos[row.departamento] || {iva:0,ieps:0};
+
+
+let iva = 0;
+let ieps = 0;
+
+if(impuesto.iva === 16){
+ iva = venta - (venta / 1.16);
+}
+
+if(impuesto.ieps === 8){
+ ieps = venta - (venta / 1.08);
+}
+
+const subtotal = venta - iva - ieps;
+const utilidad = subtotal - costo;
+
+ const tr = document.createElement("tr");
+
+ tr.innerHTML = `
 <td class="departamento-click" data-depto="${row.departamento}">
 <span style="cursor:pointer; color:#00416A; font-weight:600;">
 ${row.departamento}
 </span>
 </td>
 
-<td>${Number(row.cantidad_vendida).toLocaleString()}</td>
-<td>$${Number(row.costo_compra_total).toLocaleString()}</td>
-<td>$${Number(row.venta_total).toLocaleString()}</td>
+<td>$${costo.toLocaleString()}</td>
+<td>$${subtotal.toLocaleString('es-MX',{minimumFractionDigits:2})}</td>
+<td>$${iva.toLocaleString('es-MX',{minimumFractionDigits:2})}</td>
+<td>$${ieps.toLocaleString('es-MX',{minimumFractionDigits:2})}</td>
+<td>$${venta.toLocaleString()}</td>
+<td>$${utilidad.toLocaleString('es-MX',{minimumFractionDigits:2})}</td>
 `;
 
-  tablaBody.appendChild(tr);
+ tablaBody.appendChild(tr);
 
-  total += Number(row.venta_total);
+ total += venta;
 
 });
 
@@ -536,10 +690,15 @@ ${row.departamento}
  loading.textContent = "";
 
 }
-cargarSucursales().then(()=>{
+cargarSucursales().then(async ()=>{
+
+ await cargarImpuestos();
+
  cargarMeses();
  cargarDatosGlobal();
  cargarTopArticulos("GLOBAL");
+ cargarTopClientesGeneral("GLOBAL");
+
 });
 
 sucursalSelect.addEventListener("change",()=>{
@@ -548,22 +707,25 @@ sucursalSelect.addEventListener("change",()=>{
 
  if(!sucursal) return;
 
- if(sucursal === "GLOBAL"){
+if(sucursal === "GLOBAL"){
 
   cargarDatosGlobal();
- cargarTopArticulos("GLOBAL");
+  cargarTopArticulos("GLOBAL");
+  cargarTopClientesGeneral("GLOBAL");
 
- }
+}
 else if(sucursal === "BODEGA 41"){
 
   cargarDatos("BODEGA 41");
   cargarTopArticulos("BODEGA 41");
+  cargarTopClientesGeneral("BODEGA 41");
 
 }
  else{
 
   cargarDatos(sucursal);
   cargarTopArticulos(sucursal);
+  cargarTopClientesGeneral(sucursal);
 
  }
 
@@ -695,18 +857,28 @@ async function generarReporte(){
    deptos = data;
  }
 
- let totalGeneral = 0;
+let totalGeneral = 0;
+let totalCosto = 0;
+let totalIVA = 0;
+let totalIEPS = 0;
 
- deptos.forEach(d=>{
-   totalGeneral += Number(d.venta_total);
- });
+deptos.forEach(d=>{
+ totalGeneral += Number(d.venta_total);
+ totalCosto += Number(d.costo_compra_total);
+ totalIVA += Number(d.iva_total || 0);
+ totalIEPS += Number(d.ieps_total || 0);
+});
 
  doc.setFontSize(11);
  doc.setFont(undefined,"bold");
 
- doc.text("Departamento",14,y);
- doc.text("Venta Total",150,y);
- doc.text("% Venta",195,y,{align:"right"});
+doc.text("Departamento",14,y);
+doc.text("Costo Compra",60,y);
+doc.text("Subtotal",90,y);
+doc.text("IVA",115,y);
+doc.text("IEPS",140,y);
+doc.text("Venta Total",165,y);
+doc.text("Utilidad",185,y);
 
  y+=4;
 
@@ -720,22 +892,49 @@ async function generarReporte(){
 
    const venta = Number(d.venta_total);
    const porcentaje = ((venta/totalGeneral)*100).toFixed(2);
+   
 
-   doc.text(String(d.departamento),14,y);
+const costo = Number(d.costo_compra_total);
+// tasas de impuestos del departamento
+const ivaRate = Number(d.iva || 0) / 100;
+const iepsRate = Number(d.ieps || 0) / 100;
 
-   doc.text(
-    "$"+venta.toLocaleString('es-MX',{minimumFractionDigits:2}),
-    150,
-    y
-   );
 
-   doc.text(
-    porcentaje+"%",
-    195,
-    y,
-    {align:"right"}
-   );
+let iva = 0;
+let ieps = 0;
 
+if (d.iva == 16) {
+  iva = venta - (venta / 1.16);
+}
+
+if (d.ieps == 8) {
+  ieps = venta - (venta / 1.08);
+}
+
+const subtotal = venta - iva - ieps;
+const utilidad = subtotal - costo;
+
+doc.text(String(d.departamento),14,y);
+
+doc.text("$"+costo.toLocaleString('es-MX',{minimumFractionDigits:2}),70,y);
+
+doc.text("$"+subtotal.toLocaleString('es-MX',{minimumFractionDigits:2}),105,y);
+
+doc.text("$"+iva.toLocaleString('es-MX',{minimumFractionDigits:2}),135,y);
+
+doc.text("$"+ieps.toLocaleString('es-MX',{minimumFractionDigits:2}),160,y);
+
+doc.text("$"+venta.toLocaleString('es-MX',{minimumFractionDigits:2}),185,y);
+
+doc.text(
+ "$"+utilidad.toLocaleString('es-MX',{minimumFractionDigits:2}),185,y);
+
+doc.text(
+ porcentaje+"%",
+ 195,
+ y,
+ {align:"right"}
+);
    y+=5;
 
    if(y>270){
@@ -751,13 +950,30 @@ async function generarReporte(){
 
  doc.setFont(undefined,"bold");
 
- doc.text("TOTAL GENERAL",14,y);
-
- doc.text(
- "$"+totalGeneral.toLocaleString('es-MX',{minimumFractionDigits:2}),
- 150,
+doc.text("TOTAL GENERAL",14,y);
+doc.text(
+ "$"+totalCosto.toLocaleString('es-MX',{minimumFractionDigits:2}),
+ 90,
  y
- );
+);
+
+doc.text(
+ "$"+totalIVA.toLocaleString('es-MX',{minimumFractionDigits:2}),
+ 120,
+ y
+);
+
+doc.text(
+ "$"+totalIEPS.toLocaleString('es-MX',{minimumFractionDigits:2}),
+ 145,
+ y
+);
+
+doc.text(
+ "$"+totalGeneral.toLocaleString('es-MX',{minimumFractionDigits:2}),
+ 170,
+ y
+);
 
  doc.setFont(undefined,"normal");
 
