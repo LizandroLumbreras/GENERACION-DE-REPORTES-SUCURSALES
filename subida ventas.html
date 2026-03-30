@@ -2,14 +2,15 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Subir Ventas</title>
+<title>Prueba Carga RPT / Excel</title>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// 🔥 FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
   authDomain: "inventariopv-643f1.firebaseapp.com",
@@ -22,62 +23,145 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.subirExcel = async function () {
+// 🚀 EVENTO
+window.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("fileInput").addEventListener("change", leerArchivo);
+});
 
-  const file = document.getElementById("fileInput").files[0];
-  if (!file) return alert("Selecciona archivo");
+// 📥 LEER ARCHIVO
+async function leerArchivo(e) {
+
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const nombre = file.name.toLowerCase();
+
+  document.getElementById("estado").innerText = "Procesando archivo...";
 
   const reader = new FileReader();
 
-  reader.onload = async (e) => {
+  // 🔥 EXCEL
+  if (nombre.endsWith(".xlsx") || nombre.endsWith(".xls")) {
 
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: "array" });
+    reader.onload = async (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
 
-    const hoja = workbook.Sheets[workbook.SheetNames[0]];
-    const json = XLSX.utils.sheet_to_json(hoja);
+      const hoja = workbook.Sheets[workbook.SheetNames[0]];
+      let json = XLSX.utils.sheet_to_json(hoja);
 
-    let total = json.length;
-    let contador = 0;
+      procesarYMostrar(json);
+    };
 
-    for (let fila of json) {
+    reader.readAsArrayBuffer(file);
+  }
 
-      try {
+  // 🔥 RPT
+  else {
 
-        // 🔥 ID único
-        const id = fila["Venta"] + "_" + fila["Codigo"];
+    reader.onload = async (e) => {
 
-        await setDoc(
-          doc(db, "TIENDAS", "ALLENDE 1", "ventas", id),
-          limpiarFila(fila)
-        );
+      const texto = e.target.result;
 
-        contador++;
-        document.getElementById("estado").innerText =
-          `Subiendo ${contador} de ${total}`;
+      let json = convertirRPTaJSON(texto);
 
-      } catch (err) {
-        console.error("Error:", fila, err);
-      }
+      procesarYMostrar(json);
+    };
+
+    reader.readAsText(file);
+  }
+}
+
+// 🔥 CONVERTIR RPT
+function convertirRPTaJSON(texto) {
+
+  const lineas = texto.split("\n");
+  let datos = [];
+
+  for (let linea of lineas) {
+
+    linea = linea.trim();
+
+    // ❌ ignorar basura
+    if (
+      linea === "" ||
+      linea.includes("Sucursal") ||
+      linea.includes("Reporte") ||
+      linea.includes("Pag") ||
+      linea.includes("---") ||
+      linea.includes("Fecha") ||
+      linea.includes("Vendida")
+    ) continue;
+
+    // 🔥 detectar líneas válidas (empiezan con fecha)
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(linea)) {
+
+      // separar por espacios grandes
+      let partes = linea.split(/\s{2,}/);
+
+      // 🔥 aquí depende de tu rpt (ajustado a tu estructura)
+      let fecha = partes[0];
+
+      // Venta y Código vienen juntos → separarlos
+      let ventaCodigo = partes[1]?.split(" ") || [];
+
+      let venta = ventaCodigo[0];
+      let codigo = ventaCodigo[1];
+
+      let descripcion = partes[2];
+
+      let cantidad = parseFloat(partes[3]) || 0;
+      let costo = parseFloat(partes[4]) || 0;
+      let pza = parseFloat(partes[5]) || 0;
+      let total = parseFloat(partes[6]) || 0;
+
+      let departamento = partes[7];
+
+      datos.push({
+        "Fecha": fecha,
+        "Venta": Number(venta),
+        "Codigo": codigo,
+        "descripcion": descripcion,
+        "Cantidad vendida": cantidad,
+        "Costo compra": costo,
+        "venta Pza": pza,
+        "venta Total": total,
+        "departamento": departamento,
+        "Cliente": 0,
+        "nombre cliente": "PUBLICO EN GENERAL"
+      });
     }
+  }
 
-    document.getElementById("estado").innerText = "✅ Carga completa";
-    alert("Datos subidos correctamente 🚀");
+  return datos;
+}
+// 🔄 TRANSFORMAR SI VIENE CRUDO
+function transformarArchivoOriginal(data) {
 
-  };
+  return data.map(fila => ({
+    "Fecha": fila["Fecha"],
+    "Venta": fila["#Venta"] || fila["Venta"],
+    "Codigo": fila["Codigo"],
+    "descripcion": fila["Nombre"],
+    "Cantidad vendida": Number(fila["Cantidad Vendida"] || fila["Cantidad vendida"]) || 0,
+    "Costo compra": Number(fila["Costo Compra"] || fila["Costo compra"]) || 0,
+    "venta Pza": Number(fila["Vta Pza C/IVA"] || fila["venta Pza"]) || 0,
+    "venta Total": Number(fila["Vta Total C/IVA"] || fila["venta Total"]) || 0,
+    "departamento": fila["Depto."] || fila["departamento"],
+    "Cliente": fila["Cliente"] || 0,
+    "nombre cliente": fila["Nombre.1"] || fila["Nombre cliente"] || fila["Nombre"]
+  }));
+}
 
-  reader.readAsArrayBuffer(file);
-};
-
-// 🔥 LIMPIEZA SIN CAMBIAR COLUMNAS
+// 🧹 LIMPIAR
 function limpiarFila(fila) {
+
   let obj = {};
 
   for (let key in fila) {
 
     let valor = fila[key];
 
-    // Convertir números
     if (typeof valor === "string") {
       let num = Number(valor);
       if (!isNaN(num) && valor !== "") {
@@ -85,7 +169,6 @@ function limpiarFila(fila) {
       }
     }
 
-    // Evitar NaN
     if (typeof valor === "number" && isNaN(valor)) {
       valor = 0;
     }
@@ -96,6 +179,115 @@ function limpiarFila(fila) {
   return obj;
 }
 
+// 🔥 PROCESAR + PREVIEW
+function procesarYMostrar(json) {
+
+  if (!json || json.length === 0) {
+    alert("No se detectaron datos válidos");
+    return;
+  }
+
+  if (json[0]["#Venta"] || json[0]["Vta Total C/IVA"]) {
+    json = transformarArchivoOriginal(json);
+  }
+
+  json = json.map(limpiarFila);
+
+  console.log("RESULTADO FINAL:", json);
+
+  mostrarTabla(json);
+
+  window.datosListos = json;
+}
+
+// 📊 MOSTRAR TABLA
+function mostrarTabla(data) {
+
+  let html = "<table><tr>";
+
+  Object.keys(data[0]).forEach(k => {
+    html += `<th>${k}</th>`;
+  });
+
+  html += "</tr>";
+
+  data.slice(0, 10).forEach(row => {
+    html += "<tr>";
+    Object.values(row).forEach(v => {
+      html += `<td>${v}</td>`;
+    });
+    html += "</tr>";
+  });
+
+  html += "</table>";
+
+  document.getElementById("preview").innerHTML = html;
+  document.getElementById("estado").innerText = "✅ Datos listos (preview abajo)";
+}
+
+// 🔥 ESTA VA AQUÍ 👇
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// 🚀 SUBIR
+async function subirBatch(data) {
+
+  const BATCH_SIZE = 400;
+  const DELAY = 500; // ms entre lotes
+
+  let total = data.length;
+  let procesados = 0;
+
+  document.getElementById("estado").innerText = "Subiendo datos...";
+
+  for (let i = 0; i < total; i += BATCH_SIZE) {
+
+    let batch = writeBatch(db);
+
+    let chunk = data.slice(i, i + BATCH_SIZE);
+
+    chunk.forEach(fila => {
+
+      const id = fila["Venta"] + "_" + fila["Codigo"];
+      const ref = doc(db, "TIENDAS", "ALLENDE 1", "ventas", id);
+
+      batch.set(ref, fila);
+    });
+
+    try {
+      await batch.commit();
+    } catch (error) {
+      console.error("Error en lote:", error);
+      alert("Error en subida, revisa consola");
+      return;
+    }
+
+    procesados += chunk.length;
+
+    // 🔥 progreso
+    document.getElementById("estado").innerText =
+      `Subidos ${procesados} de ${total}`;
+
+    console.log(`✔ Lote subido: ${procesados}/${total}`);
+
+    // 🔥 PAUSA para no saturar Firebase
+    await sleep(DELAY);
+  }
+
+  document.getElementById("estado").innerText = "✅ Carga completa";
+  alert("🔥 Todo subido correctamente");
+}
+
+window.subir = async function () {
+
+  if (!window.datosListos) {
+    alert("Primero carga un archivo");
+    return;
+  }
+
+  await subirBatch(window.datosListos);
+};
 </script>
 
 <style>
@@ -106,13 +298,16 @@ body{
   padding:30px;
   text-align:center;
 }
-button{
-  padding:12px;
-  background:#22c55e;
-  border:none;
-  border-radius:8px;
-  color:white;
-  cursor:pointer;
+table{
+  margin-top:20px;
+  border-collapse: collapse;
+  width:100%;
+  background:white;
+  color:black;
+}
+th,td{
+  padding:6px;
+  border:1px solid #ddd;
 }
 </style>
 
@@ -120,14 +315,16 @@ button{
 
 <body>
 
-<h1>📤 Subir Ventas</h1>
+<h1>🧪 Prueba de Carga</h1>
 
 <input type="file" id="fileInput">
 <br><br>
 
-<button onclick="subirExcel()">Subir archivo</button>
+<button onclick="subir()">Subir a Firebase</button>
 
 <h3 id="estado"></h3>
+
+<div id="preview"></div>
 
 </body>
 </html>
