@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Subir Ventas</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
+  authDomain: "inventariopv-643f1.firebaseapp.com",
+  projectId: "inventariopv-643f1",
+  storageBucket: "inventariopv-643f1.firebasestorage.app",
+  messagingSenderId: "96242533231",
+  appId: "1:96242533231:web:aae75a18fbaf9840529e9a"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.subirExcel = async function () {
+
+  const file = document.getElementById("fileInput").files[0];
+  if (!file) return alert("Selecciona archivo");
+
+  const reader = new FileReader();
+
+  reader.onload = async (e) => {
+
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: "array" });
+
+    const hoja = workbook.Sheets[workbook.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(hoja);
+
+    let total = json.length;
+    let contador = 0;
+
+    for (let fila of json) {
+
+      try {
+
+        // 🔥 ID único
+        const id = fila["Venta"] + "_" + fila["Codigo"];
+
+        await setDoc(
+          doc(db, "TIENDAS", "ALLENDE 1", "ventas", id),
+          limpiarFila(fila)
+        );
+
+        contador++;
+        document.getElementById("estado").innerText =
+          `Subiendo ${contador} de ${total}`;
+
+      } catch (err) {
+        console.error("Error:", fila, err);
+      }
+    }
+
+    document.getElementById("estado").innerText = "✅ Carga completa";
+    alert("Datos subidos correctamente 🚀");
+
+  };
+
+  reader.readAsArrayBuffer(file);
+};
+
+// 🔥 LIMPIEZA SIN CAMBIAR COLUMNAS
+function limpiarFila(fila) {
+  let obj = {};
+
+  for (let key in fila) {
+
+    let valor = fila[key];
+
+    // Convertir números
+    if (typeof valor === "string") {
+      let num = Number(valor);
+      if (!isNaN(num) && valor !== "") {
+        valor = num;
+      }
+    }
+
+    // Evitar NaN
+    if (typeof valor === "number" && isNaN(valor)) {
+      valor = 0;
+    }
+
+    obj[key] = valor;
+  }
+
+  return obj;
+}
+
+</script>
+
+<style>
+body{
+  font-family: Arial;
+  background:#0f172a;
+  color:white;
+  padding:30px;
+  text-align:center;
+}
+button{
+  padding:12px;
+  background:#22c55e;
+  border:none;
+  border-radius:8px;
+  color:white;
+  cursor:pointer;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>📤 Subir Ventas</h1>
+
+<input type="file" id="fileInput">
+<br><br>
+
+<button onclick="subirExcel()">Subir archivo</button>
+
+<h3 id="estado"></h3>
+
+</body>
+</html>
