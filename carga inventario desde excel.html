@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Subir Inventario</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// 🔥 FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
+  authDomain: "inventariopv-643f1.firebaseapp.com",
+  projectId: "inventariopv-643f1",
+  storageBucket: "inventariopv-643f1.firebasestorage.app",
+  messagingSenderId: "96242533231",
+  appId: "1:96242533231:web:aae75a18fbaf9840529e9a"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// 📥 LEER EXCEL
+window.leerArchivo = function(e) {
+
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = (e) => {
+
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: "array" });
+
+    const hoja = workbook.Sheets[workbook.SheetNames[0]];
+    let json = XLSX.utils.sheet_to_json(hoja);
+
+    json = transformarInventario(json);
+
+    window.datosInventario = json;
+
+    mostrarPreview(json);
+  };
+
+  reader.readAsArrayBuffer(file);
+};
+
+// 🔄 TRANSFORMAR A TU ESTRUCTURA
+function transformarInventario(data) {
+
+  return data.map(fila => {
+
+    const ahora = new Date();
+
+    return {
+      cantidad: Number(fila["cantidad"]) || 0,
+      codigo: String(fila["codigo"]),
+      descripcion: fila["descripcion"] || "",
+      fecha: fila["fecha"] || ahora.toISOString().split("T")[0],
+      hora: fila["hora"] || ahora.toTimeString().split(" ")[0],
+      usuario: fila["usuario"] || "SISTEMA",
+      epochMs: Date.now()
+    };
+  });
+}
+
+// 📊 PREVIEW
+function mostrarPreview(data) {
+
+  let html = "<table><tr>";
+
+  Object.keys(data[0]).forEach(k => {
+    html += `<th>${k}</th>`;
+  });
+
+  html += "</tr>";
+
+  data.slice(0, 20).forEach(row => {
+    html += "<tr>";
+    Object.values(row).forEach(v => {
+      html += `<td>${v}</td>`;
+    });
+    html += "</tr>";
+  });
+
+  html += "</table>";
+
+  document.getElementById("preview").innerHTML = html;
+}
+
+// 🚀 SUBIR (BATCH)
+window.subir = async function() {
+
+  const data = window.datosInventario;
+
+  if (!data) {
+    alert("Primero carga archivo");
+    return;
+  }
+
+  const sucursal = document.getElementById("sucursal").value;
+
+  if (!sucursal) {
+    alert("Selecciona sucursal");
+    return;
+  }
+
+  let batch = writeBatch(db);
+  let count = 0;
+
+  for (let fila of data) {
+
+    const id = fila.codigo + "_" + Date.now() + "_" + Math.random();
+
+    const ref = doc(db, "TIENDAS", sucursal, "inventario", id);
+
+    batch.set(ref, fila);
+
+    count++;
+
+    if (count % 400 === 0) {
+      await batch.commit();
+      batch = writeBatch(db);
+    }
+  }
+
+  await batch.commit();
+
+  alert("🔥 Inventario subido correctamente");
+};
+
+</script>
+
+<style>
+body{
+  font-family: Arial;
+  background:#0f172a;
+  color:white;
+  padding:30px;
+  text-align:center;
+}
+input,select,button{
+  margin:10px;
+  padding:10px;
+}
+table{
+  margin-top:20px;
+  border-collapse: collapse;
+  width:100%;
+  background:white;
+  color:black;
+}
+th,td{
+  padding:6px;
+  border:1px solid #ddd;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>📦 Subir Inventario</h1>
+
+<select id="sucursal">
+  <option value="">Sucursal</option>
+  <option>ALLENDE 1</option>
+  <option>ALLENDE 2</option>
+</select>
+
+<br>
+
+<input type="file" onchange="leerArchivo(event)">
+
+<br>
+
+<button onclick="subir()">Subir a Firebase</button>
+
+<div id="preview"></div>
+
+</body>
+</html>
