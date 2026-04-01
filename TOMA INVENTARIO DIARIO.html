@@ -15,13 +15,17 @@
 
 body{
   margin:0;
-  height:100vh;
+  min-height:100vh;
+  padding-top:80px;
+  background:linear-gradient(135deg,#0f172a,#020617);
+  color:white;
+  overflow-y:auto;
+}
+.center{
   display:flex;
   justify-content:center;
   align-items:center;
-  padding-top:80px; /* 🔥 IMPORTANTE */
-  background:linear-gradient(135deg,#0f172a,#020617);
-  color:white;
+  min-height:calc(100vh - 80px);
 }
 
 .header{
@@ -104,21 +108,18 @@ body{
   font-size:14px;
 }
 
-/* input */
-.item input{
-  width:65px;
-  height:35px;
-  border-radius:8px;
-  border:none;
-  text-align:center;
+#inventario{
+  max-height:calc(100vh - 140px);
+  overflow-y:auto;
 }
-
+/* input */
 .item input{
   width:70px;
   height:35px;
   border-radius:8px;
   border:none;
   text-align:center;
+  font-weight:600;
 }
 
 canvas{
@@ -145,19 +146,23 @@ canvas{
 </div>
 
 <!-- LOGIN -->
-<div id="login" class="card">
-  <img src="logo.webp" style="
-  width:180px;
-  display:block;
-  margin:0 auto 20px auto;
-  border-radius:12px;
-  box-shadow:0 15px 30px rgba(0,0,0,.5);
-  background:white;
-  padding:10px;
-">
-  <input id="usuario" class="input" placeholder="Usuario">
-  <input id="password" class="input" type="password" placeholder="Contraseña">
-  <button class="btn" onclick="login()">Entrar</button>
+<div class="center">
+  <div id="login" class="card">
+
+    <img src="logo.webp" style="
+      width:260px;
+      display:block;
+      margin:0 auto 10px auto;
+      object-fit:cover;
+      transform: scale(1.4);
+    ">
+
+    <input id="usuario" class="input" placeholder="Usuario">
+    <input id="password" class="input" type="password" placeholder="Contraseña">
+
+    <button class="btn" onclick="login()">Entrar</button>
+
+  </div>
 </div>
 
 <!-- INICIO -->
@@ -247,14 +252,43 @@ window.login = async function(){
 
   loginDiv.style.display = "none";
   inicioDiv.style.display = "block";
-
+  // 🔥 RECUPERAR SI HAY INFO GUARDADA
   infoDiv.innerText = usuarioActual.nombre + " - " + usuarioActual.rutaId;
 };
 
 /* INICIAR */
 window.iniciar = async function(){
-horaInicio = new Date().toLocaleString('sv-SE');
 
+  const temp = localStorage.getItem("inventario_temp");
+
+  if(temp){
+    const data = JSON.parse(temp);
+
+    if(confirm("Hay un inventario sin terminar ¿Deseas continuar?")){
+
+      fijos = data.fijos || [];
+      aleatorios = data.aleatorios || [];
+      tipo = data.tipo || "fijos";
+      horaInicio = data.horaInicio;
+
+      inicioDiv.style.display = "none";
+      inventarioDiv.style.display = "block";
+
+      mostrar(tipo === "fijos" ? fijos : aleatorios);
+      return;
+    }else{
+      // 🔥 LIMPIAR COMPLETAMENTE
+      localStorage.removeItem("inventario_temp");
+      fijos = [];
+      aleatorios = [];
+    }
+  }
+
+  // 🔥 ASEGURAR LIMPIO SIEMPRE
+  fijos = [];
+  aleatorios = [];
+
+  horaInicio = new Date().toLocaleString('sv-SE');
   const snap = await getDocs(collection(db,"TIENDAS",usuarioActual.rutaId,"inventario"));
 
   inventario = [];
@@ -266,6 +300,9 @@ horaInicio = new Date().toLocaleString('sv-SE');
     .filter(p => !(p.descripcion||"").toLowerCase().includes("cigar"))
     .sort(()=>0.5 - Math.random())
     .slice(0,10);
+    // 🔥 FORZAR TODO EN 0
+fijos = fijos.map(p => ({ ...p, cantidad: 0 }));
+aleatorios = aleatorios.map(p => ({ ...p, cantidad: 0 }));
 
   inicioDiv.style.display = "none";
   inventarioDiv.style.display = "block";
@@ -283,7 +320,9 @@ function mostrar(lista){
     <div class="item">
       <span class="codigo">${p.codigo}</span>
       <span class="descripcion">${p.descripcion}</span>
-      <input type="number" value="0" min="0" id="${tipo}_${p.codigo}">
+      <input type="number" value="${p.cantidad ? p.cantidad : 0}" min="0" 
+id="${tipo}_${p.codigo}" 
+oninput="guardarAuto('${tipo}', '${p.codigo}', this.value)">
     </div>`;
   });
 
@@ -307,10 +346,35 @@ window.siguiente = function(){
 /* GUARDAR DATOS */
 function guardarDatos(lista,t){
   lista.forEach(p=>{
-    p.cantidad = Number(document.getElementById(`${t}_${p.codigo}`).value || 0);
+    const val = document.getElementById(`${t}_${p.codigo}`).value;
+    p.cantidad = Number(val || 0);
   });
-}
 
+  // 🔥 GUARDAR EN LOCALSTORAGE
+  localStorage.setItem("inventario_temp", JSON.stringify({
+    fijos,
+    aleatorios,
+    tipo,
+    horaInicio
+  }));
+}
+window.guardarAuto = function(tipoInput, codigo, valor){
+
+  const lista = tipoInput === "fijos" ? fijos : aleatorios;
+
+  const item = lista.find(p => p.codigo == codigo);
+
+  if(item){
+    item.cantidad = Number(valor || 0);
+  }
+
+  localStorage.setItem("inventario_temp", JSON.stringify({
+    fijos,
+    aleatorios,
+    tipo,
+    horaInicio
+  }));
+};
 /* FIRMA 2 */
 window.irFirma2 = function(){
   if(pad1.isEmpty()){
@@ -344,6 +408,7 @@ window.guardarFinal = async function(){
     firma_autorizo: pad2.toDataURL()
   });
 
+  localStorage.removeItem("inventario_temp");
   alert("Inventario guardado 🔥");
   location.reload();
 };
