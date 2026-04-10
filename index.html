@@ -8,7 +8,15 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { 
+  getFirestore, 
+  doc, 
+  writeBatch,
+  collection,
+  query,
+  where,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // 🔥 FIREBASE
 const firebaseConfig = {
@@ -229,30 +237,83 @@ function mostrarTabla(data) {
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+  async function obtenerExistentes(fecha) {
 
+  const q = query(
+    collection(db, "TIENDAS", "ALLENDE 1", "ventas"),
+    where("Fecha", "==", fecha)
+  );
+
+  const snapshot = await getDocs(q);
+
+  let existentes = new Set();
+
+  snapshot.forEach(doc => {
+    const d = doc.data();
+
+    const key = [
+      d.Fecha,
+      d.Venta,
+      d.Codigo,
+      d["Cantidad vendida"],
+      d["Costo compra"],
+      d["venta Pza"]
+    ].join("_");
+
+    existentes.add(key);
+  });
+
+  return existentes;
+}
 // 🚀 SUBIR
 async function subirBatch(data) {
 
+  const fecha = data[0]["Fecha"];
+  let existentes = await obtenerExistentes(fecha);
+
   const BATCH_SIZE = 400;
-  const DELAY = 500; // ms entre lotes
+  const DELAY = 500;
 
   let total = data.length;
-  let procesados = 0;
+  let subidos = 0;
+  let ignorados = 0;
 
-  document.getElementById("estado").innerText = "Subiendo datos...";
+  document.getElementById("estado").innerText = "Validando datos...";
 
   for (let i = 0; i < total; i += BATCH_SIZE) {
 
     let batch = writeBatch(db);
-
     let chunk = data.slice(i, i + BATCH_SIZE);
 
     chunk.forEach(fila => {
 
-      const id = fila["Venta"] + "_" + fila["Codigo"];
-      const ref = doc(db, "TIENDAS", "ALLENDE 1", "ventas", id);
+const key = [
+  fila["Fecha"],
+  fila["Venta"],
+  fila["Codigo"],
+  fila["Cantidad vendida"],
+  fila["Costo compra"],
+  fila["venta Pza"]
+].join("_");
+
+      // 🔥 SI YA EXISTE → NO SUBIR
+      if (existentes.has(key)) {
+        ignorados++;
+        return;
+      }
+
+      const ref = doc(
+        db,
+        "TIENDAS",
+        "ALLENDE 1",
+        "ventas",
+        key
+      );
 
       batch.set(ref, fila);
+
+      existentes.add(key);
+      subidos++;
     });
 
     try {
@@ -263,22 +324,17 @@ async function subirBatch(data) {
       return;
     }
 
-    procesados += chunk.length;
-
-    // 🔥 progreso
     document.getElementById("estado").innerText =
-      `Subidos ${procesados} de ${total}`;
+      `Subidos: ${subidos} | Ignorados: ${ignorados}`;
 
-    console.log(`✔ Lote subido: ${procesados}/${total}`);
-
-    // 🔥 PAUSA para no saturar Firebase
     await sleep(DELAY);
   }
 
-  document.getElementById("estado").innerText = "✅ Carga completa";
-  alert("🔥 Todo subido correctamente");
-}
+  document.getElementById("estado").innerText =
+    `✅ Listo | Subidos: ${subidos} | Ignorados: ${ignorados}`;
 
+  alert(`Carga completa\nSubidos: ${subidos}\nIgnorados: ${ignorados}`);
+}
 window.subir = async function () {
 
   if (!window.datosListos) {
