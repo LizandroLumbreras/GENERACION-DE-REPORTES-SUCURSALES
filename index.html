@@ -8,7 +8,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // 🔥 FIREBASE
 const firebaseConfig = {
@@ -94,44 +94,48 @@ function convertirRPTaJSON(texto) {
     ) continue;
 
     // 🔥 detectar líneas válidas (empiezan con fecha)
-    if (/^\d{2}\/\d{2}\/\d{4}/.test(linea)) {
+// 🔥 detectar línea válida
+if (/^\d{2}\/\d{2}\/\d{4}/.test(linea)) {
 
-      // separar por espacios grandes
-      let partes = linea.split(/\s{2,}/);
+  // 🔥 REGEX COMPLETO
+   const regex = /^(\d{2}\/\d{2}\/\d{4})\s+(\d+)\s+(\d+)\s+(.+?)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)?\s*([\d.]*)\s+([\d.]+)\s+([\d.]+)%?\s+(.+?)\s+(\d+)\s+(.+)$/;
 
-      // 🔥 aquí depende de tu rpt (ajustado a tu estructura)
-      let fecha = partes[0];
+  const match = linea.match(regex);
 
-      // Venta y Código vienen juntos → separarlos
-      let ventaCodigo = partes[1]?.split(" ") || [];
+  if (!match) continue;
 
-      let venta = ventaCodigo[0];
-      let codigo = ventaCodigo[1];
-
-      let descripcion = partes[2];
-
-      let cantidad = parseFloat(partes[3]) || 0;
-      let costo = parseFloat(partes[4]) || 0;
-      let pza = parseFloat(partes[5]) || 0;
-      let total = parseFloat(partes[6]) || 0;
-
-      let departamento = partes[7];
-
-      datos.push({
-        "Fecha": fecha,
-        "Venta": Number(venta),
-        "Codigo": codigo,
-        "descripcion": descripcion,
-        "Cantidad vendida": cantidad,
-        "Costo compra": costo,
-        "venta Pza": pza,
-        "venta Total": total,
-        "departamento": departamento,
-        "Cliente": 0,
-        "nombre cliente": "PUBLICO EN GENERAL"
-      });
-    }
-  }
+  let [
+    _,
+    fecha,
+    venta,
+    codigo,
+    descripcion,
+    cantidad,
+    costo,
+    costoTotal,
+    iva,
+    pza,
+    total,
+    departamento,
+    cliente,
+    nombreCliente
+  ] = match;
+  let deptoMatch = departamento.match(/[A-ZÁÉÍÓÚÑ ]+$/);
+  datos.push({
+    "Fecha": fecha,
+    "Venta": Number(venta),
+    "Codigo": Number(codigo),
+    "descripcion": descripcion.trim(),
+    "Cantidad vendida": Number(cantidad),
+    "Costo compra": Number(costo),
+    "venta Pza": Number(pza),
+    "venta Total": Number(total),
+    "departamento": deptoMatch ? deptoMatch[0].trim() : "",
+    "Cliente": Number(cliente),
+    "nombre cliente": nombreCliente.trim()
+  });
+}
+}
 
   return datos;
 }
@@ -247,13 +251,18 @@ async function subirBatch(data) {
 
     let chunk = data.slice(i, i + BATCH_SIZE);
 
-    chunk.forEach(fila => {
+for (const fila of chunk) {
 
-      const id = fila["Venta"] + "_" + fila["Codigo"];
-      const ref = doc(db, "TIENDAS", "ALLENDE 1", "ventas", id);
+  const id = fila["Venta"] + "_" + fila["Codigo"];
+  const ref = doc(db, "TIENDAS", "ALLENDE 1", "ventas", id);
 
-      batch.set(ref, fila);
-    });
+  const docSnap = await getDoc(ref);
+
+  // 🔥 SOLO SI NO EXISTE
+  if (!docSnap.exists()) {
+    batch.set(ref, fila);
+  }
+}
 
     try {
       await batch.commit();
