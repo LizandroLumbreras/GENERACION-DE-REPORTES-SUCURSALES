@@ -236,6 +236,8 @@ function sleep(ms) {
 
 // 🚀 SUBIR
 async function subirBatch(data) {
+  let subidos = 0;
+  let ignorados = 0;
 
   const BATCH_SIZE = 400;
   const DELAY = 500; // ms entre lotes
@@ -244,6 +246,7 @@ async function subirBatch(data) {
   let procesados = 0;
 
   document.getElementById("estado").innerText = "Subiendo datos...";
+  let cache = new Set();
 
   for (let i = 0; i < total; i += BATCH_SIZE) {
 
@@ -256,12 +259,20 @@ for (const fila of chunk) {
   const id = fila["Venta"] + "_" + fila["Codigo"];
   const ref = doc(db, "TIENDAS", "ALLENDE 1", "ventas", id);
 
-  const docSnap = await getDoc(ref);
+  if (cache.has(id)) {
+  ignorados++;
+  continue;
+}
 
-  // 🔥 SOLO SI NO EXISTE
-  if (!docSnap.exists()) {
-    batch.set(ref, fila);
-  }
+const docSnap = await getDoc(ref);
+
+if (!docSnap.exists()) {
+  batch.set(ref, fila);
+  subidos++;
+  cache.add(id);
+} else {
+  ignorados++;
+}
 }
 
     try {
@@ -272,11 +283,11 @@ for (const fila of chunk) {
       return;
     }
 
-    procesados += chunk.length;
+    procesados = subidos + ignorados;
 
     // 🔥 progreso
     document.getElementById("estado").innerText =
-      `Subidos ${procesados} de ${total}`;
+      `Procesados ${procesados}/${total} | Nuevos: ${subidos} | Duplicados: ${ignorados}`;
 
     console.log(`✔ Lote subido: ${procesados}/${total}`);
 
@@ -284,8 +295,9 @@ for (const fila of chunk) {
     await sleep(DELAY);
   }
 
-  document.getElementById("estado").innerText = "✅ Carga completa";
-  alert("🔥 Todo subido correctamente");
+  document.getElementById("estado").innerText =
+  `✅ Subidos: ${subidos} | Ignorados: ${ignorados}`;
+  alert(`Carga completa\nSubidos: ${subidos}\nIgnorados: ${ignorados}`);
 }
 
 window.subir = async function () {
