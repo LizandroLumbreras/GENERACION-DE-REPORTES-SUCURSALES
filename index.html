@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel PROVSOFT</title>
+
+<style>
+body{
+  margin:0;
+  font-family:'Segoe UI',sans-serif;
+  background:linear-gradient(135deg,#0f172a,#020617);
+  color:white;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+}
+
+.container{
+  text-align:center;
+  padding:20px;
+}
+
+.logo{
+  width:120px;
+  margin-bottom:20px;
+  filter: drop-shadow(0 5px 10px rgba(0,0,0,.5));
+}
+
+h1{
+  margin-bottom:30px;
+  font-weight:600;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px,1fr));
+  gap:20px;
+  max-width:900px;
+}
+
+.card{
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(10px);
+  padding:25px;
+  border-radius:18px;
+  cursor:pointer;
+  transition:.3s;
+  border:1px solid rgba(255,255,255,0.1);
+}
+
+.card:hover{
+  transform:translateY(-6px) scale(1.04);
+  background:rgba(255,255,255,0.15);
+}
+
+.card h3{
+  margin:0;
+  font-size:18px;
+}
+
+.card p{
+  font-size:13px;
+  opacity:.7;
+  margin-top:8px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <img src="logo.webp" class="logo">
+
+  <h1>Panel PROVSOFT</h1>
+
+  <div class="grid">
+
+    <div class="card" onclick="ir('DESCARGA COLECCION.html')">
+      <h3>📥 Descarga Colección</h3>
+      <p>Exportar información</p>
+    </div>
+
+    <div class="card" onclick="ir('SIN CLIENTES TOP.HTML')">
+      <h3>👤 Sin Clientes Top</h3>
+      <p>Análisis de clientes</p>
+    </div>
+
+    <div class="card" onclick="ir('SUBIDA DE VENTAS ALLENDE1.html')">
+      <h3>📊 Subida de Ventas</h3>
+      <p>Cargar ventas Allende</p>
+    </div>
+
+    <div class="card" onclick="ir('TOMA INVENTARIO DIARIO.html')">
+      <h3>📦 Inventario Diario</h3>
+      <p>Captura de inventario</p>
+    </div>
+
+    <div class="card" onclick="ir('VISOR VENTAS POR SUCURSAL.html')">
+      <h3>📈 Visor de Ventas</h3>
+      <p>Consulta por sucursal</p>
+    </div>
+
+    <div class="card" onclick="ir('carga inventario desde excel.html')">
+      <h3>📊 Carga Excel / RPT</h3>
+      <p>Subir archivo de ventas</p>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function ir(ruta){
+  window.location.href = ruta;
+}
+</script>
+
+</body>
+</html>
