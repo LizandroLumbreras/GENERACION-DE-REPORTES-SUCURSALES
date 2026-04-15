@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Consulta Respuestas Inventario</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
+  padding:20px;
+}
+
+h1{text-align:center;}
+
+.filtros{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+}
+
+input,select,button{
+  padding:10px;
+  border-radius:8px;
+  border:none;
+}
+
+button{
+  background:#22c55e;
+  color:white;
+  cursor:pointer;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+  color:black;
+}
+
+th,td{
+  padding:8px;
+  border:1px solid #ddd;
+}
+
+th{
+  background:#1e293b;
+  color:white;
+}
+
+tr:hover{
+  background:#e0f2fe;
+  cursor:pointer;
+}
+
+.detalle{
+  margin-top:20px;
+  background:white;
+  color:black;
+  padding:20px;
+  border-radius:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>📊 Consulta de Respuestas</h1>
+
+<div class="filtros">
+  <input type="date" id="fecha">
+  <input type="text" id="folio" placeholder="Buscar folio">
+  <button onclick="cargar()">Buscar</button>
+</div>
+
+<table>
+<thead>
+<tr>
+  <th>Folio</th>
+  <th>Fecha</th>
+  <th>Respondido por</th>
+  <th>Sucursal</th>
+</tr>
+</thead>
+<tbody id="tabla"></tbody>
+</table>
+
+<div id="detalle" class="detalle" style="display:none"></div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "inventariopv-643f1.firebaseapp.com",
+  projectId: "inventariopv-643f1"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const SUCURSAL = "ALLENDE 1";
+
+async function cargar(){
+
+  const fecha = document.getElementById("fecha").value;
+  const folio = document.getElementById("folio").value.toLowerCase();
+
+  let ref = db.collection("TIENDAS")
+              .doc(SUCURSAL)
+              .collection("ciclicos_respuesta");
+
+  let snap = await ref.get();
+
+  let datos = snap.docs.map(d => d.data());
+
+  // FILTROS
+  if(fecha){
+    datos = datos.filter(d => d.fecha_respuesta === fecha);
+  }
+
+  if(folio){
+    datos = datos.filter(d => (d.folio_respuesta || "").toLowerCase().includes(folio));
+  }
+
+  pintarTabla(datos);
+}
+
+function pintarTabla(data){
+  const tbody = document.getElementById("tabla");
+  tbody.innerHTML = "";
+
+  data.forEach(d => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${d.folio_respuesta}</td>
+      <td>${d.fecha_respuesta}</td>
+      <td>${d.respondido_por}</td>
+      <td>${d.sucursal}</td>
+    `;
+
+    tr.onclick = () => verDetalle(d);
+
+    tbody.appendChild(tr);
+  });
+}
+
+function verDetalle(data){
+
+  let html = `
+    <h2>📄 ${data.folio_respuesta}</h2>
+    <p><b>Fecha:</b> ${data.fecha_respuesta}</p>
+    <p><b>Respondido por:</b> ${data.respondido_por}</p>
+    <p><b>Observaciones:</b> ${data.observaciones_generales || "-"}</p>
+
+    <h3>Productos</h3>
+    <table>
+      <tr>
+        <th>Código</th>
+        <th>Descripción</th>
+        <th>Conteo</th>
+        <th>Obs</th>
+      </tr>
+  `;
+
+  data.productos.forEach(p=>{
+    html += `
+      <tr>
+        <td>${p.codigo}</td>
+        <td>${p.descripcion}</td>
+        <td>${p.conteo_fisico ?? ""}</td>
+        <td>${p.observacion}</td>
+      </tr>
+    `;
+  });
+
+  html += `</table>`;
+
+  if(data.firma){
+    html += `
+      <h3>Firma</h3>
+      <img src="${data.firma}" style="border:1px solid #ccc; width:300px;">
+    `;
+  }
+
+  const div = document.getElementById("detalle");
+  div.innerHTML = html;
+  div.style.display = "block";
+}
+</script>
+
+</body>
+</html>
