@@ -52,6 +52,14 @@ th{
   background:#1e293b;
   color:white;
 }
+
+/* Descripción más limpia */
+td:nth-child(5){
+  max-width:250px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
 </style>
 </head>
 
@@ -62,6 +70,7 @@ th{
 <div class="filtros">
   <input type="date" id="fecha">
   <input type="text" id="codigo" placeholder="Código producto">
+  <input type="text" id="busqueda" placeholder="Buscar código o descripción">
   
   <button onclick="cargar()">Buscar</button>
   <button onclick="eliminarPorFecha()">Eliminar Fecha</button>
@@ -87,7 +96,7 @@ th{
 
 <script>
 
-// 🔥 CONFIG
+// 🔥 CONFIG (usa tu API real)
 const firebaseConfig = {
   apiKey: "AIzaSy...",
   authDomain: "inventariopv-643f1.firebaseapp.com",
@@ -104,6 +113,7 @@ async function cargar(){
 
   const fechaInput = document.getElementById("fecha").value;
   const codigo = document.getElementById("codigo").value;
+  const busqueda = document.getElementById("busqueda").value.toLowerCase();
 
   const snapshot = await db
     .collection("TIENDAS")
@@ -120,6 +130,7 @@ async function cargar(){
 
     let fechaOK = true;
     let codigoOK = true;
+    let busquedaOK = true;
 
     // 🔹 FILTRO FECHA
     if(fechaInput){
@@ -132,7 +143,17 @@ async function cargar(){
       codigoOK = d.Codigo == codigo;
     }
 
-    if(fechaOK && codigoOK){
+    // 🔍 BUSCADOR
+    if(busqueda){
+      const texto = (
+        (d.Codigo || "") + " " + 
+        (d.descripcion || "")
+      ).toLowerCase();
+
+      busquedaOK = texto.includes(busqueda);
+    }
+
+    if(fechaOK && codigoOK && busquedaOK){
 
       dataActual.push(doc.id);
 
