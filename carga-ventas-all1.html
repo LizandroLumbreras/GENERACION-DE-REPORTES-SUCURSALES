@@ -78,66 +78,76 @@ function convertirRPTaJSON(texto) {
   const lineas = texto.split("\n");
   let datos = [];
 
-  for (let linea of lineas) {
+for (let linea of lineas) {
 
-    linea = linea.trim();
+  linea = linea.trim();
 
-    // ❌ ignorar basura
-    if (
-      linea === "" ||
-      linea.includes("Sucursal") ||
-      linea.includes("Reporte") ||
-      linea.includes("Pag") ||
-      linea.includes("---") ||
-      linea.includes("Fecha") ||
-      linea.includes("Vendida")
-    ) continue;
+  if (
+    linea === "" ||
+    linea.includes("Sucursal") ||
+    linea.includes("Reporte") ||
+    linea.includes("Pag") ||
+    linea.includes("---") ||
+    linea.includes("Fecha") ||
+    linea.includes("Vendida")
+  ) continue;
 
-    // 🔥 detectar líneas válidas (empiezan con fecha)
-// 🔥 detectar línea válida
 if (/^\d{2}\/\d{2}\/\d{4}/.test(linea)) {
 
-  // 🔥 REGEX COMPLETO
-   const regex = /^(\d{2}\/\d{2}\/\d{4})\s+(\d+)\s+(\d+)\s+(.+?)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)?\s*([\d.]*)\s+([\d.]+)\s+([\d.]+)%?\s+(.+?)\s+(\d+)\s+(.+)$/;
+  // 🔥 Regex más flexible y controlado
+  const match = linea.match(
+    /^(\d{2}\/\d{2}\/\d{4})\s+(\d+)\s+(\d+)\s+(.+?)\s+(\d+\.\d+|\d+)\s+(\d+\.\d+|\d+)\s+.*?\s+(\d+\.\d+|\d+)\s+.*?\s+(\d+)\s+(.+)$/
+  );
 
-  const match = linea.match(regex);
+  if (!match) {
+    console.warn("No parseó:", linea);
+    continue;
+  }
 
-  if (!match) continue;
+const [
+  _,
+  fecha,
+  venta,
+  codigo,
+  descripcion,
+  cantidad,
+  costo,
+  _basura,   // ← este era el total malo
+  cliente,
+  nombreCliente
+] = match;
 
-  let [
-    _,
-    fecha,
-    venta,
-    codigo,
-    descripcion,
-    cantidad,
-    costo,
-    costoTotal,
-    iva,
-    pza,
-    total,
-    departamento,
-    cliente,
-    nombreCliente
-  ] = match;
-  let deptoMatch = departamento.match(/[A-ZÁÉÍÓÚÑ ]+$/);
+// 🔥 EXTRAER TODOS LOS NÚMEROS UNA SOLA VEZ
+const numeros = linea.match(/(\d+\.\d+|\d+)/g);
+
+// 🔥 CANTIDAD REAL
+let cantidadReal = Number(cantidad);
+
+// 🔥 TOTAL REAL
+let totalReal = 0;
+if (numeros && numeros.length >= 4) {
+  totalReal = Number(numeros[numeros.length - 4]);
+}
+if (cantidadReal > 1000) {
+  console.warn("Cantidad sospechosa:", cantidadReal);
+  cantidadReal = 1;
+}
+
   datos.push({
     "Fecha": fecha,
     "Venta": Number(venta),
     "Codigo": Number(codigo),
     "descripcion": descripcion.trim(),
-    "Cantidad vendida": Number(cantidad),
+    "Cantidad vendida": cantidadReal,
     "Costo compra": Number(costo),
-    "venta Pza": Number(pza),
-    "venta Total": Number(total),
-    "departamento": deptoMatch ? deptoMatch[0].trim() : "",
+    "venta Total": totalReal,
     "Cliente": Number(cliente),
     "nombre cliente": nombreCliente.trim()
   });
 }
 }
 
-  return datos;
+return datos;
 }
 // 🔄 TRANSFORMAR SI VIENE CRUDO
 function transformarArchivoOriginal(data) {
@@ -215,7 +225,7 @@ function mostrarTabla(data) {
 
   html += "</tr>";
 
-  data.slice(0, 10).forEach(row => {
+  data.forEach(row => {
     html += "<tr>";
     Object.values(row).forEach(v => {
       html += `<td>${v}</td>`;
@@ -246,7 +256,6 @@ async function subirBatch(data) {
   let procesados = 0;
 
   document.getElementById("estado").innerText = "Subiendo datos...";
-  let cache = new Set();
 
   for (let i = 0; i < total; i += BATCH_SIZE) {
 
@@ -256,23 +265,11 @@ async function subirBatch(data) {
 
 for (const fila of chunk) {
 
-  const id = fila["Venta"] + "_" + fila["Codigo"];
+  const id = crypto.randomUUID();
   const ref = doc(db, "TIENDAS", "ALLENDE 1", "ventas", id);
 
-  if (cache.has(id)) {
-  ignorados++;
-  continue;
-}
-
-const docSnap = await getDoc(ref);
-
-if (!docSnap.exists()) {
-  batch.set(ref, fila);
-  subidos++;
-  cache.add(id);
-} else {
-  ignorados++;
-}
+batch.set(ref, fila);
+subidos++;
 }
 
     try {
@@ -288,6 +285,11 @@ if (!docSnap.exists()) {
     // 🔥 progreso
     document.getElementById("estado").innerText =
       `Procesados ${procesados}/${total} | Nuevos: ${subidos} | Duplicados: ${ignorados}`;
+      let porcentaje = Math.floor((procesados / total) * 100);
+
+let barra = document.getElementById("barra");
+barra.style.width = porcentaje + "%";
+barra.innerText = porcentaje + "%";
 
     console.log(`✔ Lote subido: ${procesados}/${total}`);
 
@@ -308,6 +310,8 @@ window.subir = async function () {
   }
 
   await subirBatch(window.datosListos);
+  document.getElementById("barra").style.width = "100%";
+document.getElementById("barra").innerText = "100%";
 };
 </script>
 
@@ -343,9 +347,22 @@ th,td{
 
 <button onclick="subir()">Subir a Firebase</button>
 
+<div style="margin-top:20px;">
+  <div style="background:#1e293b; border-radius:10px; overflow:hidden;">
+    <div id="barra" style="
+      height:20px;
+      width:0%;
+      background:#22c55e;
+      text-align:center;
+      color:white;
+      font-size:12px;
+    ">0%</div>
+  </div>
+</div>
+
 <h3 id="estado"></h3>
 
-<div id="preview"></div>
+<div id="preview" style="max-height:400px; overflow:auto;"></div>
 
 </body>
 </html>
