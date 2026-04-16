@@ -73,7 +73,9 @@ th{
 <tr>
   <th>ID</th>
   <th>Fecha</th>
+  <th>Ticket</th>
   <th>Código</th>
+  <th>Descripción</th>
   <th>Cantidad</th>
   <th>Total</th>
   <th>Acción</th>
@@ -138,7 +140,9 @@ async function cargar(){
       <tr>
         <td>${doc.id}</td>
         <td>${d.Fecha}</td>
+        <td>${d.Venta || ""}</td>
         <td>${d.Codigo}</td>
+        <td>${d.descripcion || ""}</td>
         <td>${d["Cantidad vendida"]}</td>
         <td>${d["venta Total"]}</td>
         <td>
