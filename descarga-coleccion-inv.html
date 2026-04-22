@@ -7,69 +7,77 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { 
   getFirestore, 
   collection, 
-  getDocs, 
-  doc,
-  listCollections 
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// 🔥 CONFIG
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "inventariopv-643f1.firebaseapp.com",
+  projectId: "inventariopv-643f1",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// 🔥 AUTO DETECCIÓN DE SUBCOLECCIONES
 window.cargarDatos = async function () {
 
-  const sucursal = document.getElementById("sucursal").value;
-  const coleccion = document.getElementById("coleccion").value;
-
-  if (!sucursal || !coleccion) {
-    alert("Selecciona sucursal y colección");
-    return;
-  }
-
-  document.getElementById("estado").innerText = "Cargando datos con subcolecciones...";
+  document.getElementById("estado").innerText = "Cargando...";
 
   let resultados = [];
 
-  // 🔥 función recursiva
-  async function leerSubcolecciones(refPath, pathActual = "") {
+  // 🔥 POSIBLES SUBCOLECCIONES (se detectan automáticamente si existen)
+  const posiblesSub = [
+    "EDGARDO",
+    "LIZANDRO",
+    "ROBERTO",
+    "USUARIO2"
+  ];
 
-    const snap = await getDocs(refPath);
+  for (const sub of posiblesSub) {
 
-    for (const d of snap.docs) {
+    try {
 
-      const data = d.data();
+      const ref = collection(
+        db,
+        "REVISION SUCURSALES",
+        "CENTRAL",
+        sub
+      );
 
-      resultados.push({
-        ruta: pathActual,
-        id: d.id,
-        ...data
-      });
+      const snap = await getDocs(ref);
 
-      // 🔥 obtener subcolecciones del documento
-      const docRef = doc(db, ...refPath._path.segments, d.id);
-      const subcols = await listCollections(docRef);
+      if (!snap.empty) {
 
-      for (const sub of subcols) {
-        await leerSubcolecciones(
-          collection(docRef, sub.id),
-          pathActual + "/" + sub.id
-        );
+        snap.forEach(doc => {
+          resultados.push({
+            subcoleccion: sub,
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+
       }
+
+    } catch (e) {
+      console.log("No existe:", sub);
     }
   }
-
-  // 🔥 inicio
-  const ref = collection(db, "TIENDAS", sucursal, coleccion);
-
-  await leerSubcolecciones(ref, coleccion);
 
   window.datos = resultados;
 
   mostrarTabla(resultados);
 
   document.getElementById("estado").innerText =
-    `✅ ${resultados.length} registros (incluyendo subcolecciones)`;
+    `✅ ${resultados.length} registros`;
 };
-// 📊 MOSTRAR TABLA
+
+// 📊 TABLA
 function mostrarTabla(data) {
 
   if (!data.length) {
@@ -77,7 +85,6 @@ function mostrarTabla(data) {
     return;
   }
 
-  // 🔥 columnas reales dinámicas
   const columnas = [...new Set(data.flatMap(obj => Object.keys(obj)))];
 
   let html = "<table><tr>";
@@ -88,7 +95,7 @@ function mostrarTabla(data) {
 
   html += "</tr>";
 
-  data.slice(0, 30).forEach(row => {
+  data.forEach(row => {
     html += "<tr>";
     columnas.forEach(col => {
       html += `<td>${row[col] ?? ""}</td>`;
@@ -101,13 +108,13 @@ function mostrarTabla(data) {
   document.getElementById("tabla").innerHTML = html;
 }
 
-// 📥 DESCARGAR CRUDO
+// 📥 EXCEL
 window.descargar = function () {
 
   const data = window.datos;
 
   if (!data || data.length === 0) {
-    alert("No hay datos para descargar");
+    alert("No hay datos");
     return;
   }
 
@@ -115,20 +122,17 @@ window.descargar = function () {
 
   const filas = data.map(obj => {
     let fila = {};
-    columnas.forEach(col => {
-      fila[col] = obj[col] ?? "";
-    });
+    columnas.forEach(col => fila[col] = obj[col] ?? "");
     return fila;
   });
 
   const ws = XLSX.utils.json_to_sheet(filas);
   const wb = XLSX.utils.book_new();
 
-  XLSX.utils.book_append_sheet(wb, ws, "datos_crudos");
+  XLSX.utils.book_append_sheet(wb, ws, "REVISION");
 
-  XLSX.writeFile(wb, "firebase_crudo.xlsx");
+  XLSX.writeFile(wb, "revision_sucursales.xlsx");
 };
-
 </script>
 
 <style>
@@ -139,7 +143,7 @@ body{
   padding:30px;
   text-align:center;
 }
-select,button{
+button{
   padding:10px;
   margin:10px;
 }
@@ -155,31 +159,11 @@ th,td{
   border:1px solid #ddd;
 }
 </style>
-
 </head>
 
 <body>
 
-<h1>📊 Descarga Firebase PRO</h1>
-
-<select id="sucursal">
-  <option value="">Selecciona sucursal</option>
-  <option>ALLENDE 1</option>
-  <option>ALLENDE 2</option>
-  <option>CENTRAL</option>
-</select>
-
-<select id="coleccion">
-  <option value="">Selecciona colección</option>
-  <option value="ventas">ventas</option>
-  <option value="inventario">inventario</option>
-  <option value="transferencias">transferencias</option>
-  <option value="transferencias1">transferencias1</option>
-  <option value="articulos">articulos</option>
-  <option value="auditorias">auditorias</option>
-</select>
-
-<br>
+<h1>📊 REVISION SUCURSALES - CENTRAL</h1>
 
 <button onclick="cargarDatos()">Cargar datos</button>
 <button onclick="descargar()">Descargar Excel</button>
