@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Descarga Firebase PRO</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// 🔥 CONFIG FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
+  authDomain: "inventariopv-643f1.firebaseapp.com",
+  projectId: "inventariopv-643f1",
+  storageBucket: "inventariopv-643f1.firebasestorage.app",
+  messagingSenderId: "96242533231",
+  appId: "1:96242533231:web:aae75a18fbaf9840529e9a"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// 🔥 CARGAR DATOS
+window.cargarDatos = async function () {
+
+  const sucursal = document.getElementById("sucursal").value;
+  const coleccion = document.getElementById("coleccion").value;
+
+  if (!sucursal || !coleccion) {
+    alert("Selecciona sucursal y colección");
+    return;
+  }
+
+  document.getElementById("estado").innerText = "Cargando datos...";
+
+  const ref = collection(db, "TIENDAS", sucursal, coleccion);
+  const snapshot = await getDocs(ref);
+
+  let datos = [];
+
+  snapshot.forEach(doc => {
+    datos.push({
+      id: doc.id,
+      ...doc.data()
+    });
+  });
+
+  window.datos = datos;
+
+  mostrarTabla(datos);
+
+  document.getElementById("estado").innerText =
+    `✅ ${datos.length} registros cargados`;
+};
+
+// 📊 MOSTRAR TABLA
+function mostrarTabla(data) {
+
+  if (!data.length) {
+    document.getElementById("tabla").innerHTML = "Sin datos";
+    return;
+  }
+
+  // 🔥 columnas reales dinámicas
+  const columnas = [...new Set(data.flatMap(obj => Object.keys(obj)))];
+
+  let html = "<table><tr>";
+
+  columnas.forEach(col => {
+    html += `<th>${col}</th>`;
+  });
+
+  html += "</tr>";
+
+  data.slice(0, 30).forEach(row => {
+    html += "<tr>";
+    columnas.forEach(col => {
+      html += `<td>${row[col] ?? ""}</td>`;
+    });
+    html += "</tr>";
+  });
+
+  html += "</table>";
+
+  document.getElementById("tabla").innerHTML = html;
+}
+
+// 📥 DESCARGAR CRUDO
+window.descargar = function () {
+
+  const data = window.datos;
+
+  if (!data || data.length === 0) {
+    alert("No hay datos para descargar");
+    return;
+  }
+
+  const columnas = [...new Set(data.flatMap(obj => Object.keys(obj)))];
+
+  const filas = data.map(obj => {
+    let fila = {};
+    columnas.forEach(col => {
+      fila[col] = obj[col] ?? "";
+    });
+    return fila;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(filas);
+  const wb = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(wb, ws, "datos_crudos");
+
+  XLSX.writeFile(wb, "firebase_crudo.xlsx");
+};
+
+</script>
+
+<style>
+body{
+  font-family: Arial;
+  background:#0f172a;
+  color:white;
+  padding:30px;
+  text-align:center;
+}
+select,button{
+  padding:10px;
+  margin:10px;
+}
+table{
+  margin-top:20px;
+  border-collapse: collapse;
+  width:100%;
+  background:white;
+  color:black;
+}
+th,td{
+  padding:6px;
+  border:1px solid #ddd;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>📊 Descarga Firebase PRO</h1>
+
+<select id="sucursal">
+  <option value="">Selecciona sucursal</option>
+  <option>ALLENDE 1</option>
+  <option>ALLENDE 2</option>
+  <option>CENTRAL</option>
+</select>
+
+<select id="coleccion">
+  <option value="">Selecciona colección</option>
+  <option value="ventas">ventas</option>
+  <option value="inventario">inventario</option>
+  <option value="transferencias">transferencias</option>
+  <option value="transferencias1">transferencias1</option>
+  <option value="articulos">articulos</option>
+  <option value="auditorias">auditorias</option>
+</select>
+
+<br>
+
+<button onclick="cargarDatos()">Cargar datos</button>
+<button onclick="descargar()">Descargar Excel</button>
+
+<h3 id="estado"></h3>
+
+<div id="tabla"></div>
+
+</body>
+</html>
