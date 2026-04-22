@@ -109,16 +109,48 @@ window.subir = async function() {
     return;
   }
 
+  // 🔥 FOLIO FIJO (como tú lo pediste)
+  const folio = "CENTRAL 06042026";
+
+  // 🔥 DOCUMENTO PADRE
+  const refPadre = doc(
+    db,
+    "TIENDAS",
+    "CENTRAL", // 🔥 FORZAMOS CENTRAL
+    "inventario1",
+    folio
+  );
+
   let batch = writeBatch(db);
+
+  // 🔥 DATOS GENERALES DEL INVENTARIO
+  batch.set(refPadre, {
+    folio: folio,
+    tienda: "CENTRAL",
+    tipo: "TOMA_INVENTARIO",
+    estado: "CARGADO",
+    creadaEn: new Date(),
+    totalItems: data.length,
+    totalLeidos: data.length,
+    totalMovidos: data.length,
+    totalErrores: 0
+  });
+
   let count = 0;
 
   for (let fila of data) {
 
-    const id = fila.codigo + "_" + Date.now() + "_" + Math.random();
+    const refItem = doc(
+      db,
+      "TIENDAS",
+      "CENTRAL",
+      "inventario1",
+      folio,
+      "items",
+      fila.codigo // 🔥 ID EXACTO
+    );
 
-    const ref = doc(db, "TIENDAS", sucursal, "inventario", id);
-
-    batch.set(ref, fila);
+    batch.set(refItem, fila);
 
     count++;
 
@@ -130,7 +162,7 @@ window.subir = async function() {
 
   await batch.commit();
 
-  alert("🔥 Inventario subido correctamente");
+  alert("🔥 Inventario CENTRAL 06042026 cargado correctamente");
 };
 
 </script>
@@ -170,6 +202,7 @@ th,td{
   <option value="">Sucursal</option>
   <option>ALLENDE 1</option>
   <option>ALLENDE 2</option>
+  <option>CENTRAL</option>
 </select>
 
 <br>
