@@ -7,23 +7,14 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { 
+  getFirestore, 
+  collection, 
+  getDocs, 
+  doc,
+  listCollections 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// 🔥 CONFIG FIREBASE
-const firebaseConfig = {
-  apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
-  authDomain: "inventariopv-643f1.firebaseapp.com",
-  projectId: "inventariopv-643f1",
-  storageBucket: "inventariopv-643f1.firebasestorage.app",
-  messagingSenderId: "96242533231",
-  appId: "1:96242533231:web:aae75a18fbaf9840529e9a"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// 🔥 CARGAR DATOS
 window.cargarDatos = async function () {
 
   const sucursal = document.getElementById("sucursal").value;
@@ -34,28 +25,50 @@ window.cargarDatos = async function () {
     return;
   }
 
-  document.getElementById("estado").innerText = "Cargando datos...";
+  document.getElementById("estado").innerText = "Cargando datos con subcolecciones...";
 
+  let resultados = [];
+
+  // 🔥 función recursiva
+  async function leerSubcolecciones(refPath, pathActual = "") {
+
+    const snap = await getDocs(refPath);
+
+    for (const d of snap.docs) {
+
+      const data = d.data();
+
+      resultados.push({
+        ruta: pathActual,
+        id: d.id,
+        ...data
+      });
+
+      // 🔥 obtener subcolecciones del documento
+      const docRef = doc(db, ...refPath._path.segments, d.id);
+      const subcols = await listCollections(docRef);
+
+      for (const sub of subcols) {
+        await leerSubcolecciones(
+          collection(docRef, sub.id),
+          pathActual + "/" + sub.id
+        );
+      }
+    }
+  }
+
+  // 🔥 inicio
   const ref = collection(db, "TIENDAS", sucursal, coleccion);
-  const snapshot = await getDocs(ref);
 
-  let datos = [];
+  await leerSubcolecciones(ref, coleccion);
 
-  snapshot.forEach(doc => {
-    datos.push({
-      id: doc.id,
-      ...doc.data()
-    });
-  });
+  window.datos = resultados;
 
-  window.datos = datos;
-
-  mostrarTabla(datos);
+  mostrarTabla(resultados);
 
   document.getElementById("estado").innerText =
-    `✅ ${datos.length} registros cargados`;
+    `✅ ${resultados.length} registros (incluyendo subcolecciones)`;
 };
-
 // 📊 MOSTRAR TABLA
 function mostrarTabla(data) {
 
