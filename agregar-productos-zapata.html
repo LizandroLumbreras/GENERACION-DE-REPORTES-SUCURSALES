@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Productos PROVSOFT</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<style>
+:root{
+  --azul:#00416A;
+  --azul2:#0c6cbd;
+  --bg:#0f172a;
+  --card:#1e293b;
+  --ok:#22c55e;
+  --warn:#f59e0b;
+  --error:#ef4444;
+}
+
+body{
+  font-family:Arial;
+  background:var(--bg);
+  color:white;
+  margin:0;
+}
+
+header{
+  background:linear-gradient(135deg,var(--azul),var(--azul2));
+  padding:15px;
+  text-align:center;
+  font-size:20px;
+  font-weight:bold;
+}
+
+.container{
+  max-width:1000px;
+  margin:auto;
+  padding:20px;
+}
+
+.card{
+  background:var(--card);
+  padding:20px;
+  border-radius:12px;
+  margin-top:15px;
+  box-shadow:0 10px 25px rgba(0,0,0,.3);
+}
+
+input, textarea{
+  width:100%;
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  margin:5px 0;
+}
+
+button{
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  margin-top:10px;
+  font-weight:bold;
+}
+
+.btn{
+  background:var(--ok);
+  color:white;
+}
+
+.btn-sec{
+  background:#3b82f6;
+  color:white;
+}
+
+.msg{
+  margin-top:10px;
+  font-weight:bold;
+}
+
+.ok{color:var(--ok);}
+.warn{color:var(--warn);}
+.error{color:var(--error);}
+
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>Gestión de Productos - PROVSOFT</header>
+
+<div class="container">
+
+<!-- BUSCADOR -->
+<div class="card">
+  <h3>Buscar producto</h3>
+  <input id="buscarCodigo" placeholder="Escanea o escribe código">
+  <button class="btn-sec" onclick="buscar()">Buscar</button>
+  <div id="mensaje" class="msg"></div>
+</div>
+
+<!-- FORM -->
+<div class="card">
+<h3>Agregar / Editar</h3>
+
+<input id="codigoBarra" placeholder="Código de barra">
+
+<div class="row">
+<input id="concepto" placeholder="Concepto">
+<input id="marca" placeholder="Marca">
+</div>
+
+<div class="row">
+<input id="departamento" placeholder="Departamento">
+<input id="proveedor" placeholder="Proveedor">
+</div>
+
+<div class="row">
+<input id="precioPublico" type="number" placeholder="Precio público">
+<input id="costoSinImpuesto" type="number" placeholder="Costo">
+</div>
+
+<div class="row">
+<input id="mayoreo" type="number" placeholder="Mayoreo">
+<input id="medioMayoreo" type="number" placeholder="Medio Mayoreo">
+</div>
+
+<div class="row">
+<input id="ivaTasa" type="number" step="0.01" placeholder="IVA">
+<input id="iepsTasa" type="number" placeholder="IEPS">
+</div>
+
+<input id="unidadMedidaSat" placeholder="Unidad SAT">
+
+<textarea id="codigosEquivalentes" placeholder="Codigos equivalentes separados por coma"></textarea>
+
+<h4>Precios por cantidad</h4>
+<div id="preciosContainer"></div>
+<button class="btn-sec" onclick="agregarPrecio()">+ Agregar precio</button>
+
+<button class="btn" onclick="guardar()">Guardar</button>
+
+</div>
+
+</div>
+
+<script>
+// 🔥 FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
+  authDomain: "inventariopv-643f1.firebaseapp.com",
+  projectId: "inventariopv-643f1"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let editId = null;
+
+// 🔍 ENTER BUSCAR
+document.getElementById("buscarCodigo").addEventListener("keypress", e=>{
+  if(e.key==="Enter") buscar();
+});
+
+// ➕ PRECIOS
+function agregarPrecio(data = {}){
+  const div = document.createElement("div");
+  div.innerHTML = `
+    <div class="row">
+      <input placeholder="Cantidad mínima" type="number" value="${data.cantidadMinima || ''}">
+      <input placeholder="Precio unitario" type="number" value="${data.precioUnitario || ''}">
+    </div>
+    <input placeholder="Precio total" type="number" value="${data.precioTotal || ''}">
+    <hr>
+  `;
+  document.getElementById("preciosContainer").appendChild(div);
+}
+
+// 🔍 BUSCAR
+async function buscar(){
+
+  const codigo = document.getElementById("buscarCodigo").value.trim();
+  const msg = document.getElementById("mensaje");
+
+  if(!codigo) return;
+
+  limpiar();
+
+  const doc = await db.collection("productos").doc(codigo).get();
+
+  if(doc.exists){
+
+    const d = doc.data();
+    editId = codigo;
+
+    llenar(d);
+
+    msg.innerHTML = "✅ Producto encontrado";
+    msg.className = "msg ok";
+
+  }else{
+
+    editId = null;
+
+    document.getElementById("codigoBarra").value = codigo;
+
+    msg.innerHTML = "⚠️ Sin coincidencias. Puedes usar este código";
+    msg.className = "msg warn";
+  }
+}
+
+// 💾 GUARDAR
+async function guardar(){
+
+  const codigo = document.getElementById("codigoBarra").value.trim();
+  const concepto = document.getElementById("concepto").value.trim();
+  const msg = document.getElementById("mensaje");
+
+  if(!codigo || !concepto){
+    alert("Código y concepto obligatorios");
+    return;
+  }
+
+  const ref = db.collection("productos").doc(codigo);
+  const doc = await ref.get();
+
+  // VALIDACIÓN
+  if(doc.exists){
+    const d = doc.data();
+    if(d.concepto !== concepto){
+      msg.innerHTML = "❌ Código ya existe con otra descripción";
+      msg.className = "msg error";
+      return;
+    }
+  }
+
+  // PRECIOS
+  const precios = [];
+  document.querySelectorAll("#preciosContainer div").forEach(div=>{
+    const inputs = div.querySelectorAll("input");
+    precios.push({
+      cantidadMinima: Number(inputs[0].value),
+      precioUnitario: Number(inputs[1].value),
+      precioTotal: Number(inputs[2].value)
+    });
+  });
+
+  // DATA COMPLETA
+  const data = {
+    activo:true,
+    codigoBarra:codigo,
+    concepto:concepto,
+    marca:document.getElementById("marca").value,
+    departamento:document.getElementById("departamento").value,
+    precioPublico:Number(document.getElementById("precioPublico").value),
+    costoSinImpuesto:Number(document.getElementById("costoSinImpuesto").value),
+    mayoreo:Number(document.getElementById("mayoreo").value),
+    medioMayoreo:Number(document.getElementById("medioMayoreo").value),
+    ivaTasa:Number(document.getElementById("ivaTasa").value),
+    iepsTasa:Number(document.getElementById("iepsTasa").value),
+    proveedor:document.getElementById("proveedor").value,
+    unidadMedidaSat:document.getElementById("unidadMedidaSat").value,
+    codigosEquivalentes:document.getElementById("codigosEquivalentes").value.split(","),
+    preciosPorCantidad:precios,
+    updatedAt:new Date()
+  };
+
+  await ref.set(data,{merge:true});
+
+  msg.innerHTML = "✅ Guardado correctamente";
+  msg.className = "msg ok";
+
+  limpiar();
+}
+
+// 🧠 LLENAR
+function llenar(d){
+  document.getElementById("codigoBarra").value = d.codigoBarra;
+  document.getElementById("concepto").value = d.concepto;
+  document.getElementById("marca").value = d.marca;
+  document.getElementById("departamento").value = d.departamento;
+  document.getElementById("precioPublico").value = d.precioPublico;
+  document.getElementById("costoSinImpuesto").value = d.costoSinImpuesto;
+  document.getElementById("mayoreo").value = d.mayoreo;
+  document.getElementById("medioMayoreo").value = d.medioMayoreo;
+  document.getElementById("ivaTasa").value = d.ivaTasa;
+  document.getElementById("iepsTasa").value = d.iepsTasa;
+  document.getElementById("proveedor").value = d.proveedor;
+  document.getElementById("unidadMedidaSat").value = d.unidadMedidaSat;
+
+  document.getElementById("codigosEquivalentes").value = (d.codigosEquivalentes||[]).join(",");
+
+  document.getElementById("preciosContainer").innerHTML="";
+  (d.preciosPorCantidad||[]).forEach(p=>agregarPrecio(p));
+}
+
+// 🧹 LIMPIAR
+function limpiar(){
+  document.querySelectorAll("input, textarea").forEach(i=>{
+    if(i.id !== "buscarCodigo") i.value="";
+  });
+  document.getElementById("preciosContainer").innerHTML="";
+}
+
+</script>
+
+</body>
+</html>
