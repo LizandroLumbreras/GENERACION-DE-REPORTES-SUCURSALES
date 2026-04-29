@@ -171,14 +171,18 @@ document.getElementById("buscarCodigo").addEventListener("keypress", e=>{
 // ➕ PRECIOS
 function agregarPrecio(data = {}){
   const div = document.createElement("div");
+
   div.innerHTML = `
     <div class="row">
-      <input placeholder="Cantidad mínima" type="number" value="${data.cantidadMinima || ''}">
-      <input placeholder="Precio unitario" type="number" value="${data.precioUnitario || ''}">
+      <input class="min" placeholder="Cantidad mínima" type="number" value="${data.cantidadMinima || ''}">
+      <input class="unit" placeholder="Precio unitario" type="number" value="${data.precioUnitario || ''}">
     </div>
-    <input placeholder="Precio total" type="number" value="${data.precioTotal || ''}">
+    <input class="total" placeholder="Precio total" type="number" value="${data.precioTotal || ''}">
     <hr>
   `;
+
+  document.getElementById("preciosContainer").appendChild(div);
+}
   document.getElementById("preciosContainer").appendChild(div);
 }
 
@@ -242,14 +246,21 @@ async function guardar(){
 
   // PRECIOS
   const precios = [];
-  document.querySelectorAll("#preciosContainer div").forEach(div=>{
-    const inputs = div.querySelectorAll("input");
+document.querySelectorAll("#preciosContainer > div").forEach(div=>{
+
+  const min = div.querySelector(".min");
+  const unit = div.querySelector(".unit");
+  const total = div.querySelector(".total");
+
+  if(min && unit && total){
     precios.push({
-      cantidadMinima: Number(inputs[0].value),
-      precioUnitario: Number(inputs[1].value),
-      precioTotal: Number(inputs[2].value)
+      cantidadMinima: Number(min.value || 0),
+      precioUnitario: Number(unit.value || 0),
+      precioTotal: Number(total.value || 0)
     });
-  });
+  }
+
+});
 
   // DATA COMPLETA
   const data = {
