@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROVSOFT | Dashboard Mermas y Devoluciones</title>
+
+<link rel="stylesheet" href="styles.css">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body{
+  margin:0;
+  background:#f5f7fb;
+  font-family:Arial,Helvetica,sans-serif;
+}
+
+.header{
+  background:#991b1b;
+  color:white;
+  padding:15px;
+}
+
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:15px;
+  padding:15px;
+}
+
+.card{
+  background:white;
+  border-radius:12px;
+  padding:15px;
+  box-shadow:0 3px 10px rgba(0,0,0,.12);
+}
+
+.valor{
+  font-size:28px;
+  font-weight:bold;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  border-bottom:1px solid #ddd;
+  padding:10px;
+  text-align:left;
+}
+
+.btn{
+  background:#991b1b;
+  color:white;
+  border:none;
+  padding:10px 15px;
+  border-radius:8px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+<h1>Dashboard Mermas y Devoluciones</h1>
+</div>
+
+<div class="cards">
+
+<div class="card">
+<h3>Total Mermas</h3>
+<div id="totalMermas" class="valor">0</div>
+</div>
+
+<div class="card">
+<h3>Total Devoluciones</h3>
+<div id="totalDevoluciones" class="valor">0</div>
+</div>
+
+<div class="card">
+<h3>Sucursal con más mermas</h3>
+<div id="topMerma" class="valor">-</div>
+</div>
+
+<div class="card">
+<h3>Sucursal con más devoluciones</h3>
+<div id="topDevolucion" class="valor">-</div>
+</div>
+
+</div>
+
+<div class="card" style="margin:15px;">
+<h2>Últimas Devoluciones</h2>
+
+<table>
+<thead>
+<tr>
+<th>Fecha</th>
+<th>Sucursal</th>
+<th>Folio</th>
+</tr>
+</thead>
+
+<tbody id="tablaDevoluciones"></tbody>
+
+</table>
+</div>
+
+<div class="card" style="margin:15px;">
+<h2>Últimas Mermas</h2>
+
+<table>
+<thead>
+<tr>
+<th>Fecha</th>
+<th>Sucursal</th>
+<th>Folio</th>
+</tr>
+</thead>
+
+<tbody id="tablaMermas"></tbody>
+
+</table>
+</div>
+
+<div class="card" style="margin:15px;">
+<h2>Historial General</h2>
+
+<select id="filtroSucursal">
+<option value="">Todas</option>
+</select>
+
+<button class="btn" onclick="cargarHistorial()">
+Actualizar
+</button>
+
+<div id="historial"></div>
+
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
