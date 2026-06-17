@@ -1,144 +1,355 @@
 const $ = id => document.getElementById(id);
 
-let devoluciones = [];
-let mermas = [];
+let movimientos = [];
+let chartMermas = null;
+let chartDevoluciones = null;
 
-window.addEventListener("load", async ()=>{
+window.addEventListener("load", async () => {
 
-  await cargarDatos();
+  try {
 
-});
+    await cargarDashboard();
 
-async function cargarDatos(){
+    $("btnFiltrar").addEventListener(
+      "click",
+      aplicarFiltros
+    );
 
-  devoluciones = [];
-  mermas = [];
+    $("btnExportar").addEventListener(
+      "click",
+      exportarExcel
+    );
 
-  const resumenMermas = {};
-  const resumenDevoluciones = {};
+    $("cerrarModal").addEventListener(
+      "click",
+      () => {
+        $("modalDetalle").style.display = "none";
+      }
+    );
 
-  for(const sucursal of SUCURSALES){
+  } catch (error) {
 
-    try{
+    console.error(error);
 
-      const devSnap = await db
-      .collection("TIENDAS")
-      .doc(sucursal)
-      .collection("DEVOLUCIONES")
-      .get();
-
-      devSnap.forEach(doc=>{
-
-        const data = doc.data();
-
-        devoluciones.push({
-          sucursal,
-          id:doc.id,
-          ...data
-        });
-
-        resumenDevoluciones[sucursal] =
-          (resumenDevoluciones[sucursal] || 0) + 1;
-
-      });
-
-    }catch(e){
-      console.log(e);
-    }
-
-    try{
-
-      const mermaSnap = await db
-      .collection("TIENDAS")
-      .doc(sucursal)
-      .collection("MERMAS")
-      .get();
-
-      mermaSnap.forEach(doc=>{
-
-        const data = doc.data();
-
-        mermas.push({
-          sucursal,
-          id:doc.id,
-          ...data
-        });
-
-        resumenMermas[sucursal] =
-          (resumenMermas[sucursal] || 0) + 1;
-
-      });
-
-    }catch(e){
-      console.log(e);
-    }
+    alert(
+      "Error cargando información.\nRevisa consola."
+    );
 
   }
 
-  $("#totalMermas").textContent = mermas.length;
+});
 
-  $("#totalDevoluciones").textContent =
-    devoluciones.length;
+async function cargarDashboard(){
 
-  let topM = "-";
-  let topMC = 0;
+  movimientos = [];
 
-  Object.entries(resumenMermas).forEach(([s,c])=>{
+  const sucursales =
+    await obtenerSucursales();
 
-    if(c > topMC){
-      topMC = c;
-      topM = s;
-    }
+  llenarComboSucursales(
+    sucursales
+  );
 
-  });
+  for(const sucursal of sucursales){
 
-  let topD = "-";
-  let topDC = 0;
+    await cargarSucursal(
+      sucursal
+    );
 
-  Object.entries(resumenDevoluciones).forEach(([s,c])=>{
+  }
 
-    if(c > topDC){
-      topDC = c;
-      topD = s;
-    }
+  actualizarIndicadores();
 
-  });
+  renderHistorial();
 
-  $("#topMerma").textContent = topM;
-  $("#topDevolucion").textContent = topD;
+  renderGraficas();
 
-  renderTablas();
+  $("ultimaActualizacion")
+    .textContent =
+      "Actualizado: " +
+      new Date()
+      .toLocaleString("es-MX");
 
 }
 
-function renderTablas(){
+function llenarComboSucursales(
+  sucursales
+){
 
-  const ultimasDev =
-    devoluciones.slice(-20).reverse();
+  const select =
+    $("filtroSucursal");
 
-  $("#tablaDevoluciones").innerHTML =
-    ultimasDev.map(x=>`
+  select.innerHTML = `
+    <option value="">
+      Todas las sucursales
+    </option>
+  `;
 
-      <tr>
-        <td>${x.fecha || ""}</td>
-        <td>${x.sucursal}</td>
-        <td>${x.id}</td>
-      </tr>
+  sucursales.forEach(
+    sucursal => {
 
-    `).join("");
+      const option =
+        document.createElement(
+          "option"
+        );
 
-  const ultimasMermas =
-    mermas.slice(-20).reverse();
+      option.value =
+        sucursal;
 
-  $("#tablaMermas").innerHTML =
-    ultimasMermas.map(x=>`
+      option.textContent =
+        sucursal;
 
-      <tr>
-        <td>${x.fecha || ""}</td>
-        <td>${x.sucursal}</td>
-        <td>${x.id}</td>
-      </tr>
+      select.appendChild(
+        option
+      );
 
-    `).join("");
+    }
+  );
+
+}
+
+async function cargarSucursal(
+  sucursal
+){
+
+  const tiendaRef =
+    db.collection("TIENDAS")
+      .doc(sucursal);
+
+  const mermasData =
+    await leerColeccionFlexible(
+      tiendaRef,
+      COLECCIONES_MERMA
+    );
+
+  if(mermasData){
+
+    mermasData.snap.forEach(
+      doc => {
+
+        movimientos.push({
+
+          id: doc.id,
+
+          sucursal,
+
+          tipo: "MERMA",
+
+          ...doc.data()
+
+        });
+
+      }
+    );
+
+  }
+
+  const devolucionesData =
+    await leerColeccionFlexible(
+      tiendaRef,
+      COLECCIONES_DEVOLUCION
+    );
+
+  if(devolucionesData){
+
+    devolucionesData.snap.forEach(
+      doc => {
+
+        movimientos.push({
+
+          id: doc.id,
+
+          sucursal,
+
+          tipo: "DEVOLUCION",
+
+          ...doc.data()
+
+        });
+
+      }
+    );
+
+  }
+
+}
+
+function actualizarIndicadores(){
+
+  const mermas =
+    movimientos.filter(
+      x => x.tipo === "MERMA"
+    );
+
+  const devoluciones =
+    movimientos.filter(
+      x => x.tipo === "DEVOLUCION"
+    );
+
+  $("totalMermas")
+    .textContent =
+      number(
+        mermas.length
+      );
+
+  $("totalDevoluciones")
+    .textContent =
+      number(
+        devoluciones.length
+      );
+
+  $("piezasMermadas")
+    .textContent =
+      number(
+        mermas.reduce(
+          (a,b)=>
+            a +
+            (b.totales?.piezas || 0),
+          0
+        )
+      );
+
+  $("piezasDevueltas")
+    .textContent =
+      number(
+        devoluciones.reduce(
+          (a,b)=>
+            a +
+            (b.totales?.piezas || 0),
+          0
+        )
+      );
+
+  $("costoMermas")
+    .textContent =
+      money(
+        mermas.reduce(
+          (a,b)=>
+            a +
+            (b.totales?.costoEstimado || 0),
+          0
+        )
+      );
+
+  $("costoDevoluciones")
+    .textContent =
+      money(
+        devoluciones.reduce(
+          (a,b)=>
+            a +
+            (b.totales?.costoEstimado || 0),
+          0
+        )
+      );
+
+  $("ventaMermas")
+    .textContent =
+      money(
+        mermas.reduce(
+          (a,b)=>
+            a +
+            (b.totales?.ventaEstimado || 0),
+          0
+        )
+      );
+
+  $("ventaDevoluciones")
+    .textContent =
+      money(
+        devoluciones.reduce(
+          (a,b)=>
+            a +
+            (b.totales?.ventaEstimado || 0),
+          0
+        )
+      );
+
+}
+
+function renderHistorial(){
+
+  const tbody =
+    $("tablaHistorial");
+
+  tbody.innerHTML = "";
+
+  const ordenados =
+    [...movimientos]
+    .sort((a,b)=>{
+
+      const fa =
+        a.creadoEnLocal || "";
+
+      const fb =
+        b.creadoEnLocal || "";
+
+      return fb.localeCompare(fa);
+
+    });
+
+  ordenados.forEach(
+    movimiento => {
+
+      const tr =
+        document.createElement(
+          "tr"
+        );
+
+      tr.innerHTML = `
+
+        <td>
+          ${fechaCorta(
+            movimiento.creadoEnLocal
+          )}
+        </td>
+
+        <td>
+          ${movimiento.sucursal}
+        </td>
+
+        <td>
+          ${movimiento.tipo}
+        </td>
+
+        <td>
+          ${movimiento.folio || ""}
+        </td>
+
+        <td>
+          ${movimiento.estado || ""}
+        </td>
+
+        <td>
+          ${number(
+            movimiento.totales?.piezas
+          )}
+        </td>
+
+        <td>
+          ${money(
+            movimiento.totales?.costoEstimado
+          )}
+        </td>
+
+        <td>
+          ${money(
+            movimiento.totales?.ventaEstimado
+          )}
+        </td>
+
+      `;
+
+      tr.addEventListener(
+        "click",
+        () => abrirDetalle(
+          movimiento
+        )
+      );
+
+      tbody.appendChild(
+        tr
+      );
+
+    });
 
 }
