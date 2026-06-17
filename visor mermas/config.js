@@ -32,16 +32,12 @@ const APP_VERSION = "1.0.1";
 
 const COLECCIONES_MERMA = [
   "MERMA",
-  "MERMAS",
-  "merma",
-  "mermas"
+  "MERMAS"
 ];
 
 const COLECCIONES_DEVOLUCION = [
   "DEVOLUCION",
-  "DEVOLUCIONES",
-  "devolucion",
-  "devoluciones"
+  "DEVOLUCIONES"
 ];
 
 
