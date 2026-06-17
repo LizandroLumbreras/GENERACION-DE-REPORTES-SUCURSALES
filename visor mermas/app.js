@@ -4,6 +4,49 @@ let movimientos = [];
 let chartMermas = null;
 let chartDevoluciones = null;
 
+// ===============================
+// SUCURSALES FIJAS
+// ===============================
+
+const SUCURSALES_FIJAS = [
+  "ALLENDE 1",
+  "ALLENDE 2",
+  "CENTRAL",
+  "MONTEMORELOS",
+  "OSITO",
+  "PROVILEON",
+  "RIO VERDE",
+  "RUTA1",
+  "RUTA2"
+];
+
+// ===============================
+// COLECCIONES
+// ===============================
+
+const COLECCIONES_MERMA_APP = [
+  "MERMAS",
+  "MERMA",
+  "mermas",
+  "merma",
+  "Mermas",
+  "Merma"
+];
+
+const COLECCIONES_DEVOLUCION_APP = [
+  "DEVOLUCIONES",
+  "DEVOLUCION",
+  "devoluciones",
+  "devolucion",
+  "Devoluciones",
+  "Devolucion",
+  "DEVOLUCIÓN"
+];
+
+// ===============================
+// INICIO
+// ===============================
+
 window.addEventListener("load", async () => {
   try {
     prepararEventos();
@@ -19,23 +62,37 @@ window.addEventListener("load", async () => {
   }
 });
 
+// ===============================
+// EVENTOS
+// ===============================
+
 function prepararEventos() {
-  $("btnFiltrar")?.addEventListener(
-    "click",
-    aplicarFiltros
-  );
+  const btnFiltrar = $("btnFiltrar");
+  const btnExportar = $("btnExportar");
+  const cerrarModal = $("cerrarModal");
 
-  $("btnExportar")?.addEventListener(
-    "click",
-    exportarExcel
-  );
+  if (btnFiltrar) {
+    btnFiltrar.addEventListener(
+      "click",
+      aplicarFiltros
+    );
+  }
 
-  $("cerrarModal")?.addEventListener(
-    "click",
-    () => {
-      $("modalDetalle").style.display = "none";
-    }
-  );
+  if (btnExportar) {
+    btnExportar.addEventListener(
+      "click",
+      exportarExcel
+    );
+  }
+
+  if (cerrarModal) {
+    cerrarModal.addEventListener(
+      "click",
+      () => {
+        $("modalDetalle").style.display = "none";
+      }
+    );
+  }
 
   window.addEventListener("click", e => {
     if (e.target === $("modalDetalle")) {
@@ -44,15 +101,19 @@ function prepararEventos() {
   });
 }
 
+// ===============================
+// DASHBOARD
+// ===============================
+
 async function cargarDashboard() {
   movimientos = [];
 
-  const sucursales = await obtenerSucursales();
+  const sucursales = await obtenerSucursalesApp();
 
   llenarComboSucursales(sucursales);
 
   for (const sucursal of sucursales) {
-    await cargarSucursal(sucursal);
+    await cargarSucursalApp(sucursal);
   }
 
   pintarDashboard(movimientos);
@@ -60,6 +121,40 @@ async function cargarDashboard() {
   $("ultimaActualizacion").textContent =
     "Actualizado: " +
     new Date().toLocaleString("es-MX");
+
+  console.log("Movimientos finales:", movimientos);
+}
+
+async function obtenerSucursalesApp() {
+  const set = new Set();
+
+  SUCURSALES_FIJAS.forEach(s => {
+    set.add(normalizarTextoApp(s));
+  });
+
+  try {
+    const snap = await db
+      .collection("TIENDAS")
+      .get();
+
+    snap.docs.forEach(doc => {
+      const id = normalizarTextoApp(doc.id);
+
+      if (id && id !== "CONFIG") {
+        set.add(id);
+      }
+    });
+
+  } catch (error) {
+    console.warn(
+      "No se pudieron leer sucursales:",
+      error
+    );
+  }
+
+  return [...set]
+    .filter(s => s !== "CONFIG")
+    .sort((a, b) => a.localeCompare(b, "es"));
 }
 
 function llenarComboSucursales(sucursales) {
@@ -67,33 +162,13 @@ function llenarComboSucursales(sucursales) {
 
   if (!select) return;
 
-  const sucursalesFijas = [
-    "ALLENDE 1",
-    "ALLENDE 2",
-    "CENTRAL",
-    "MONTEMORELOS",
-    "OSITO",
-    "PROVILEON",
-    "RIO VERDE",
-    "RUTA1",
-    "RUTA2"
-  ];
-
-  const listaFinal = [
-    ...new Set([
-      ...sucursalesFijas,
-      ...(sucursales || [])
-    ].map(s => String(s).trim().toUpperCase()))
-  ].filter(s => s && s !== "CONFIG")
-   .sort((a, b) => a.localeCompare(b, "es"));
-
   select.innerHTML = `
     <option value="">
       Todas las sucursales
     </option>
   `;
 
-  listaFinal.forEach(sucursal => {
+  sucursales.forEach(sucursal => {
     const option = document.createElement("option");
 
     option.value = sucursal;
@@ -102,56 +177,280 @@ function llenarComboSucursales(sucursales) {
     select.appendChild(option);
   });
 
-  console.log("Sucursales cargadas en combo:", listaFinal);
+  console.log("Sucursales en combo:", sucursales);
 }
 
-async function cargarSucursal(sucursal) {
-  const tiendaRef = db
-    .collection("TIENDAS")
-    .doc(sucursal);
+// ===============================
+// CARGA DE DATOS FIRESTORE
+// ===============================
 
-  const mermasData =
-    await leerColeccionFlexible(
+async function cargarSucursalApp(sucursal) {
+  const variantes = variantesSucursalApp(sucursal);
+
+  console.log("Buscando sucursal:", sucursal);
+  console.log("Variantes:", variantes);
+
+  for (const nombreDoc of variantes) {
+    const tiendaRef = db
+      .collection("TIENDAS")
+      .doc(nombreDoc);
+
+    await cargarColeccionesDeTipo(
       tiendaRef,
-      COLECCIONES_MERMA
-    );
-
-  agregarMovimientosDesdeData(
-    mermasData,
-    sucursal,
-    "MERMA"
-  );
-
-  const devolucionesData =
-    await leerColeccionFlexible(
-      tiendaRef,
-      COLECCIONES_DEVOLUCION
-    );
-
-  agregarMovimientosDesdeData(
-    devolucionesData,
-    sucursal,
-    "DEVOLUCION"
-  );
-}
-
-function agregarMovimientosDesdeData(resultado, sucursal, tipo) {
-  if (!resultado) return;
-
-  resultado.documentos.forEach(item => {
-    const data = item.data || {};
-
-    movimientos.push({
-      id: item.id,
-      coleccion: item.coleccion,
+      nombreDoc,
       sucursal,
-      tipo,
-      ...data,
-      productos: obtenerProductos(data),
-      totales: calcularTotales(data)
-    });
+      "MERMA",
+      COLECCIONES_MERMA_APP
+    );
+
+    await cargarColeccionesDeTipo(
+      tiendaRef,
+      nombreDoc,
+      sucursal,
+      "DEVOLUCION",
+      COLECCIONES_DEVOLUCION_APP
+    );
+  }
+}
+
+async function cargarColeccionesDeTipo(
+  tiendaRef,
+  nombreDoc,
+  sucursal,
+  tipo,
+  colecciones
+) {
+  for (const nombreColeccion of colecciones) {
+    try {
+      const snap = await tiendaRef
+        .collection(nombreColeccion)
+        .get();
+
+      console.log(
+        `Ruta revisada: TIENDAS/${nombreDoc}/${nombreColeccion}`,
+        "Registros:",
+        snap.size
+      );
+
+      snap.forEach(doc => {
+        const data = doc.data();
+
+        const movimiento = {
+          id: doc.id,
+          sucursal: normalizarTextoApp(sucursal),
+          tipo,
+          coleccion: nombreColeccion,
+          ...data
+        };
+
+        movimiento.productos =
+          obtenerProductosApp(movimiento);
+
+        movimiento.totales =
+          calcularTotalesApp(movimiento);
+
+        movimientos.push(movimiento);
+      });
+
+    } catch (error) {
+      console.warn(
+        "Error leyendo:",
+        `TIENDAS/${nombreDoc}/${nombreColeccion}`,
+        error
+      );
+    }
+  }
+}
+
+// ===============================
+// NORMALIZAR DATOS
+// ===============================
+
+function normalizarTextoApp(valor) {
+  return String(valor || "")
+    .trim()
+    .toUpperCase();
+}
+
+function variantesSucursalApp(sucursal) {
+  const limpia = String(sucursal || "").trim();
+
+  const capitalizada = limpia
+    .toLowerCase()
+    .replace(/\b\w/g, letra => letra.toUpperCase());
+
+  return [...new Set([
+    limpia,
+    limpia.toUpperCase(),
+    limpia.toLowerCase(),
+    capitalizada
+  ])];
+}
+
+function obtenerProductosApp(movimiento) {
+  if (!movimiento) return [];
+
+  if (Array.isArray(movimiento.productos)) {
+    return movimiento.productos;
+  }
+
+  if (Array.isArray(movimiento.items)) {
+    return movimiento.items;
+  }
+
+  if (Array.isArray(movimiento.detalle)) {
+    return movimiento.detalle;
+  }
+
+  if (Array.isArray(movimiento.productosSeleccionados)) {
+    return movimiento.productosSeleccionados;
+  }
+
+  if (Array.isArray(movimiento.listaProductos)) {
+    return movimiento.listaProductos;
+  }
+
+  return [];
+}
+
+function calcularTotalesApp(movimiento) {
+  const productos = obtenerProductosApp(movimiento);
+
+  const piezasProductos = productos.reduce(
+    (acc, p) =>
+      acc + Number(
+        p.cantidad ||
+        p.piezas ||
+        p.qty ||
+        0
+      ),
+    0
+  );
+
+  const costoProductos = productos.reduce(
+    (acc, p) =>
+      acc + Number(
+        p.subtotalCosto ||
+        p.costoTotal ||
+        p.totalCosto ||
+        p.costo ||
+        0
+      ),
+    0
+  );
+
+  const ventaProductos = productos.reduce(
+    (acc, p) =>
+      acc + Number(
+        p.subtotalVenta ||
+        p.ventaTotal ||
+        p.totalVenta ||
+        p.venta ||
+        0
+      ),
+    0
+  );
+
+  return {
+    piezas: Number(
+      movimiento.totales?.piezas ??
+      movimiento.piezas ??
+      movimiento.totalPiezas ??
+      piezasProductos ??
+      0
+    ),
+
+    costoEstimado: Number(
+      movimiento.totales?.costoEstimado ??
+      movimiento.costoEstimado ??
+      movimiento.totalCosto ??
+      costoProductos ??
+      0
+    ),
+
+    ventaEstimado: Number(
+      movimiento.totales?.ventaEstimado ??
+      movimiento.ventaEstimado ??
+      movimiento.totalVenta ??
+      ventaProductos ??
+      0
+    )
+  };
+}
+
+// ===============================
+// FECHAS Y FORMATOS
+// ===============================
+
+function normalizarFechaApp(fecha) {
+  if (!fecha) return null;
+
+  if (fecha && typeof fecha.toDate === "function") {
+    return fecha.toDate();
+  }
+
+  if (fecha && typeof fecha.seconds === "number") {
+    return new Date(fecha.seconds * 1000);
+  }
+
+  const d = new Date(fecha);
+
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function fechaCortaApp(fecha) {
+  const d = normalizarFechaApp(fecha);
+
+  if (!d) {
+    return fecha || "";
+  }
+
+  return d.toLocaleString("es-MX", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
   });
 }
+
+function fechaISOApp(fecha) {
+  const d = normalizarFechaApp(fecha);
+
+  if (!d) return "";
+
+  return d.toISOString().substring(0, 10);
+}
+
+function moneyApp(valor) {
+  return Number(valor || 0).toLocaleString(
+    "es-MX",
+    {
+      style: "currency",
+      currency: "MXN"
+    }
+  );
+}
+
+function numberApp(valor) {
+  return Number(valor || 0).toLocaleString("es-MX");
+}
+
+function obtenerFechaMovimiento(movimiento) {
+  return (
+    movimiento.creadoEnLocal ||
+    movimiento.creadoEn ||
+    movimiento.fecha ||
+    movimiento.fechaRegistro ||
+    movimiento.fechaMovimiento ||
+    movimiento.timestamp ||
+    ""
+  );
+}
+
+// ===============================
+// PINTAR DASHBOARD
+// ===============================
 
 function pintarDashboard(datos) {
   actualizarIndicadores(datos);
@@ -160,44 +459,50 @@ function pintarDashboard(datos) {
 }
 
 function actualizarIndicadores(datos = movimientos) {
-  const mermas =
-    datos.filter(x => x.tipo === "MERMA");
+  const mermas = datos.filter(
+    x => x.tipo === "MERMA"
+  );
 
-  const devoluciones =
-    datos.filter(x => x.tipo === "DEVOLUCION");
+  const devoluciones = datos.filter(
+    x => x.tipo === "DEVOLUCION"
+  );
 
   $("totalMermas").textContent =
-    number(mermas.length);
+    numberApp(mermas.length);
 
   $("totalDevoluciones").textContent =
-    number(devoluciones.length);
+    numberApp(devoluciones.length);
 
   $("piezasMermadas").textContent =
-    number(sumar(mermas, "piezas"));
+    numberApp(sumarCampo(mermas, "piezas"));
 
   $("piezasDevueltas").textContent =
-    number(sumar(devoluciones, "piezas"));
+    numberApp(sumarCampo(devoluciones, "piezas"));
 
   $("costoMermas").textContent =
-    money(sumar(mermas, "costoEstimado"));
+    moneyApp(sumarCampo(mermas, "costoEstimado"));
 
   $("costoDevoluciones").textContent =
-    money(sumar(devoluciones, "costoEstimado"));
+    moneyApp(sumarCampo(devoluciones, "costoEstimado"));
 
   $("ventaMermas").textContent =
-    money(sumar(mermas, "ventaEstimado"));
+    moneyApp(sumarCampo(mermas, "ventaEstimado"));
 
   $("ventaDevoluciones").textContent =
-    money(sumar(devoluciones, "ventaEstimado"));
+    moneyApp(sumarCampo(devoluciones, "ventaEstimado"));
 }
 
-function sumar(datos, campo) {
+function sumarCampo(datos, campo) {
   return datos.reduce(
     (acc, item) =>
       acc + Number(item.totales?.[campo] || 0),
     0
   );
 }
+
+// ===============================
+// TABLA
+// ===============================
 
 function renderHistorial(datos = movimientos) {
   const tbody = $("tablaHistorial");
@@ -207,16 +512,12 @@ function renderHistorial(datos = movimientos) {
   tbody.innerHTML = "";
 
   const ordenados = [...datos].sort((a, b) => {
-    const fa = fechaISO(
-      a.creadoEnLocal ||
-      a.creadoEn ||
-      a.fecha
+    const fa = fechaISOApp(
+      obtenerFechaMovimiento(a)
     );
 
-    const fb = fechaISO(
-      b.creadoEnLocal ||
-      b.creadoEn ||
-      b.fecha
+    const fb = fechaISOApp(
+      obtenerFechaMovimiento(b)
     );
 
     return fb.localeCompare(fa);
@@ -232,7 +533,6 @@ function renderHistorial(datos = movimientos) {
     `;
 
     tbody.appendChild(tr);
-
     return;
   }
 
@@ -241,10 +541,8 @@ function renderHistorial(datos = movimientos) {
 
     tr.innerHTML = `
       <td>
-        ${fechaCorta(
-          movimiento.creadoEnLocal ||
-          movimiento.creadoEn ||
-          movimiento.fecha
+        ${fechaCortaApp(
+          obtenerFechaMovimiento(movimiento)
         )}
       </td>
 
@@ -265,15 +563,15 @@ function renderHistorial(datos = movimientos) {
       </td>
 
       <td>
-        ${number(movimiento.totales?.piezas)}
+        ${numberApp(movimiento.totales?.piezas)}
       </td>
 
       <td>
-        ${money(movimiento.totales?.costoEstimado)}
+        ${moneyApp(movimiento.totales?.costoEstimado)}
       </td>
 
       <td>
-        ${money(movimiento.totales?.ventaEstimado)}
+        ${moneyApp(movimiento.totales?.ventaEstimado)}
       </td>
     `;
 
@@ -286,8 +584,12 @@ function renderHistorial(datos = movimientos) {
   });
 }
 
+// ===============================
+// MODAL DETALLE
+// ===============================
+
 function abrirDetalle(movimiento) {
-  const productos = obtenerProductos(movimiento);
+  const productos = obtenerProductosApp(movimiento);
 
   let html = `
     <div style="
@@ -301,48 +603,31 @@ function abrirDetalle(movimiento) {
         ${movimiento.folio || "Sin folio"}
       </h3>
 
-      <p>
-        <b>Sucursal:</b>
-        ${movimiento.sucursal || ""}
-      </p>
-
-      <p>
-        <b>Tipo:</b>
-        ${movimiento.tipo || ""}
-      </p>
-
-      <p>
-        <b>Estado:</b>
-        ${movimiento.estado || ""}
-      </p>
-
-      <p>
-        <b>Colección:</b>
-        ${movimiento.coleccion || ""}
-      </p>
+      <p><b>Sucursal:</b> ${movimiento.sucursal || ""}</p>
+      <p><b>Tipo:</b> ${movimiento.tipo || ""}</p>
+      <p><b>Estado:</b> ${movimiento.estado || ""}</p>
+      <p><b>Colección:</b> ${movimiento.coleccion || ""}</p>
 
       <p>
         <b>Fecha:</b>
-        ${fechaCorta(
-          movimiento.creadoEnLocal ||
-          movimiento.creadoEn ||
-          movimiento.fecha
+        ${fechaCortaApp(
+          obtenerFechaMovimiento(movimiento)
         )}
       </p>
 
       <p>
         <b>Piezas:</b>
-        ${number(movimiento.totales?.piezas)}
+        ${numberApp(movimiento.totales?.piezas)}
       </p>
 
       <p>
         <b>Costo:</b>
-        ${money(movimiento.totales?.costoEstimado)}
+        ${moneyApp(movimiento.totales?.costoEstimado)}
       </p>
 
       <p>
         <b>Venta:</b>
-        ${money(movimiento.totales?.ventaEstimado)}
+        ${moneyApp(movimiento.totales?.ventaEstimado)}
       </p>
 
     </div>
@@ -353,7 +638,6 @@ function abrirDetalle(movimiento) {
       width:100%;
       border-collapse:collapse;
     ">
-
       <thead>
         <tr>
           <th>Código</th>
@@ -365,7 +649,6 @@ function abrirDetalle(movimiento) {
           <th>Venta</th>
         </tr>
       </thead>
-
       <tbody>
   `;
 
@@ -373,7 +656,7 @@ function abrirDetalle(movimiento) {
     html += `
       <tr>
         <td colspan="7" style="text-align:center;color:#777;">
-          Sin productos en el movimiento
+          Sin productos en este movimiento
         </td>
       </tr>
     `;
@@ -387,11 +670,16 @@ function abrirDetalle(movimiento) {
         </td>
 
         <td>
-          ${producto.descripcion || producto.concepto || ""}
+          ${producto.descripcion || producto.concepto || producto.nombre || ""}
         </td>
 
         <td>
-          ${number(producto.cantidad || producto.piezas || 0)}
+          ${numberApp(
+            producto.cantidad ||
+            producto.piezas ||
+            producto.qty ||
+            0
+          )}
         </td>
 
         <td>
@@ -403,19 +691,21 @@ function abrirDetalle(movimiento) {
         </td>
 
         <td>
-          ${money(
+          ${moneyApp(
             producto.subtotalCosto ||
             producto.costoTotal ||
             producto.totalCosto ||
+            producto.costo ||
             0
           )}
         </td>
 
         <td>
-          ${money(
+          ${moneyApp(
             producto.subtotalVenta ||
             producto.ventaTotal ||
             producto.totalVenta ||
+            producto.venta ||
             0
           )}
         </td>
@@ -431,6 +721,10 @@ function abrirDetalle(movimiento) {
   $("detalleMovimiento").innerHTML = html;
   $("modalDetalle").style.display = "flex";
 }
+
+// ===============================
+// FILTROS
+// ===============================
 
 function obtenerDatosFiltrados() {
   const sucursal = $("filtroSucursal").value;
@@ -454,10 +748,8 @@ function obtenerDatosFiltrados() {
 
   if (fechaInicial) {
     datos = datos.filter(x => {
-      const fecha = fechaISO(
-        x.creadoEnLocal ||
-        x.creadoEn ||
-        x.fecha
+      const fecha = fechaISOApp(
+        obtenerFechaMovimiento(x)
       );
 
       return fecha && fecha >= fechaInicial;
@@ -466,10 +758,8 @@ function obtenerDatosFiltrados() {
 
   if (fechaFinal) {
     datos = datos.filter(x => {
-      const fecha = fechaISO(
-        x.creadoEnLocal ||
-        x.creadoEn ||
-        x.fecha
+      const fecha = fechaISOApp(
+        obtenerFechaMovimiento(x)
       );
 
       return fecha && fecha <= fechaFinal;
@@ -484,6 +774,10 @@ function aplicarFiltros() {
 
   pintarDashboard(datos);
 }
+
+// ===============================
+// GRAFICAS
+// ===============================
 
 function renderGraficas(datos = movimientos) {
   const resumenMermas =
@@ -565,20 +859,22 @@ function crearGrafica(canvasId, label, resumen) {
   });
 }
 
+// ===============================
+// EXPORTAR EXCEL
+// ===============================
+
 function exportarExcel() {
   const datosFiltrados = obtenerDatosFiltrados();
 
   const datos = [];
 
   datosFiltrados.forEach(m => {
-    const productos = obtenerProductos(m);
+    const productos = obtenerProductosApp(m);
 
     if (!productos.length) {
       datos.push({
-        Fecha: fechaCorta(
-          m.creadoEnLocal ||
-          m.creadoEn ||
-          m.fecha
+        Fecha: fechaCortaApp(
+          obtenerFechaMovimiento(m)
         ),
         Sucursal: m.sucursal || "",
         Tipo: m.tipo || "",
@@ -598,30 +894,35 @@ function exportarExcel() {
 
     productos.forEach(p => {
       datos.push({
-        Fecha: fechaCorta(
-          m.creadoEnLocal ||
-          m.creadoEn ||
-          m.fecha
+        Fecha: fechaCortaApp(
+          obtenerFechaMovimiento(m)
         ),
         Sucursal: m.sucursal || "",
         Tipo: m.tipo || "",
         Folio: m.folio || "",
         Estado: m.estado || "",
         Codigo: p.codigo || p.codigoBarra || "",
-        Descripcion: p.descripcion || p.concepto || "",
-        Cantidad: Number(p.cantidad || p.piezas || 0),
+        Descripcion: p.descripcion || p.concepto || p.nombre || "",
+        Cantidad: Number(
+          p.cantidad ||
+          p.piezas ||
+          p.qty ||
+          0
+        ),
         Motivo: p.motivo || "",
         Comentario: p.comentario || p.observacion || "",
         Costo: Number(
           p.subtotalCosto ||
           p.costoTotal ||
           p.totalCosto ||
+          p.costo ||
           0
         ),
         Venta: Number(
           p.subtotalVenta ||
           p.ventaTotal ||
           p.totalVenta ||
+          p.venta ||
           0
         )
       });
