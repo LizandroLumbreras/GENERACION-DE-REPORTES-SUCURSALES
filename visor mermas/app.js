@@ -1,5 +1,4 @@
 const $ = id => document.getElementById(id);
-
 let movimientos = [];
 let chartMermas = null;
 let chartDevoluciones = null;
