@@ -89,10 +89,8 @@ select.innerHTML = `     <option value="">
       Todas las sucursales     </option>
   `;
 
-sucursales.forEach(
-sucursal => {
+sucursales.forEach(sucursal => {
 
-```
   const option =
     document.createElement(
       "option"
@@ -108,10 +106,7 @@ sucursal => {
     option
   );
 
-}
-```
-
-);
+});
 
 }
 
