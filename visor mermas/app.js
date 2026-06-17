@@ -5,897 +5,619 @@ let chartMermas = null;
 let chartDevoluciones = null;
 
 window.addEventListener("load", async () => {
+  try {
+    prepararEventos();
 
-try {
+    await cargarDashboard();
 
-```
-await cargarDashboard();
+  } catch (error) {
+    console.error(error);
 
-$("btnFiltrar").addEventListener(
-  "click",
-  aplicarFiltros
-);
-
-$("btnExportar").addEventListener(
-  "click",
-  exportarExcel
-);
-
-$("cerrarModal").addEventListener(
-  "click",
-  () => {
-    $("modalDetalle").style.display = "none";
-  }
-);
-```
-
-} catch (error) {
-
-```
-console.error(error);
-
-alert(
-  "Error cargando información.\nRevisa consola."
-);
-```
-
-}
-
-});
-
-async function cargarDashboard(){
-
-movimientos = [];
-
-const sucursales =
-await obtenerSucursales();
-
-llenarComboSucursales(
-sucursales
-);
-
-for(const sucursal of sucursales){
-
-```
-await cargarSucursal(
-  sucursal
-);
-```
-
-}
-
-actualizarIndicadores();
-
-renderHistorial();
-
-renderGraficas();
-
-$("ultimaActualizacion")
-.textContent =
-"Actualizado: " +
-new Date()
-.toLocaleString("es-MX");
-
-}
-
-function llenarComboSucursales(
-sucursales
-){
-
-const select =
-$("filtroSucursal");
-
-select.innerHTML = `     <option value="">
-      Todas las sucursales     </option>
-  `;
-
-sucursales.forEach(sucursal => {
-
-  const option =
-    document.createElement(
-      "option"
+    alert(
+      "Error cargando información.\nRevisa consola."
     );
-
-  option.value =
-    sucursal;
-
-  option.textContent =
-    sucursal;
-
-  select.appendChild(
-    option
-  );
-
+  }
 });
 
-}
-
-async function cargarSucursal(
-sucursal
-){
-
-const tiendaRef =
-db.collection("TIENDAS")
-.doc(sucursal);
-
-const mermasData =
-await leerColeccionFlexible(
-tiendaRef,
-COLECCIONES_MERMA
-);
-
-if(mermasData){
-
-```
-mermasData.snap.forEach(
-  doc => {
-
-    movimientos.push({
-
-      id: doc.id,
-
-      sucursal,
-
-      tipo: "MERMA",
-
-      ...doc.data()
-
-    });
-
-  }
-);
-```
-
-}
-
-const devolucionesData =
-await leerColeccionFlexible(
-tiendaRef,
-COLECCIONES_DEVOLUCION
-);
-
-if(devolucionesData){
-
-```
-devolucionesData.snap.forEach(
-  doc => {
-
-    movimientos.push({
-
-      id: doc.id,
-
-      sucursal,
-
-      tipo: "DEVOLUCION",
-
-      ...doc.data()
-
-    });
-
-  }
-);
-```
-
-}
-
-}
-function actualizarIndicadores(){
-
-const mermas =
-movimientos.filter(
-x => x.tipo === "MERMA"
-);
-
-const devoluciones =
-movimientos.filter(
-x => x.tipo === "DEVOLUCION"
-);
-
-$("totalMermas")
-.textContent =
-number(
-mermas.length
-);
-
-$("totalDevoluciones")
-.textContent =
-number(
-devoluciones.length
-);
-
-$("piezasMermadas")
-.textContent =
-number(
-mermas.reduce(
-(a,b)=>
-a +
-(b.totales?.piezas || 0),
-0
-)
-);
-
-$("piezasDevueltas")
-.textContent =
-number(
-devoluciones.reduce(
-(a,b)=>
-a +
-(b.totales?.piezas || 0),
-0
-)
-);
-
-$("costoMermas")
-.textContent =
-money(
-mermas.reduce(
-(a,b)=>
-a +
-(b.totales?.costoEstimado || 0),
-0
-)
-);
-
-$("costoDevoluciones")
-.textContent =
-money(
-devoluciones.reduce(
-(a,b)=>
-a +
-(b.totales?.costoEstimado || 0),
-0
-)
-);
-
-$("ventaMermas")
-.textContent =
-money(
-mermas.reduce(
-(a,b)=>
-a +
-(b.totales?.ventaEstimado || 0),
-0
-)
-);
-
-$("ventaDevoluciones")
-.textContent =
-money(
-devoluciones.reduce(
-(a,b)=>
-a +
-(b.totales?.ventaEstimado || 0),
-0
-)
-);
-
-}
-
-function renderHistorial(){
-
-const tbody =
-$("tablaHistorial");
-
-tbody.innerHTML = "";
-
-const ordenados =
-[...movimientos]
-.sort((a,b)=>{
-
-```
-  const fa =
-    a.creadoEnLocal || "";
-
-  const fb =
-    b.creadoEnLocal || "";
-
-  return fb.localeCompare(fa);
-
-});
-```
-
-ordenados.forEach(
-movimiento => {
-
-```
-  const tr =
-    document.createElement(
-      "tr"
-    );
-
-  tr.innerHTML = `
-
-    <td>
-      ${fechaCorta(
-        movimiento.creadoEnLocal
-      )}
-    </td>
-
-    <td>
-      ${movimiento.sucursal}
-    </td>
-
-    <td>
-      ${movimiento.tipo}
-    </td>
-
-    <td>
-      ${movimiento.folio || ""}
-    </td>
-
-    <td>
-      ${movimiento.estado || ""}
-    </td>
-
-    <td>
-      ${number(
-        movimiento.totales?.piezas
-      )}
-    </td>
-
-    <td>
-      ${money(
-        movimiento.totales?.costoEstimado
-      )}
-    </td>
-
-    <td>
-      ${money(
-        movimiento.totales?.ventaEstimado
-      )}
-    </td>
-
-  `;
-
-  tr.addEventListener(
+function prepararEventos() {
+  $("btnFiltrar")?.addEventListener(
     "click",
-    () => abrirDetalle(
-      movimiento
-    )
+    aplicarFiltros
   );
 
-  tbody.appendChild(
-    tr
+  $("btnExportar")?.addEventListener(
+    "click",
+    exportarExcel
   );
 
-});
-```
-
-}
-function abrirDetalle(movimiento){
-
-let html = `
-
-```
-<div style="
-  margin-bottom:20px;
-  padding:15px;
-  background:#f7f7f7;
-  border-radius:10px;
-">
-
-  <h3>
-    ${movimiento.folio || ""}
-  </h3>
-
-  <p>
-    <b>Sucursal:</b>
-    ${movimiento.sucursal}
-  </p>
-
-  <p>
-    <b>Tipo:</b>
-    ${movimiento.tipo}
-  </p>
-
-  <p>
-    <b>Estado:</b>
-    ${movimiento.estado || ""}
-  </p>
-
-  <p>
-    <b>Fecha:</b>
-    ${fechaCorta(
-      movimiento.creadoEnLocal
-    )}
-  </p>
-
-  <p>
-    <b>Piezas:</b>
-    ${number(
-      movimiento.totales?.piezas
-    )}
-  </p>
-
-  <p>
-    <b>Costo:</b>
-    ${money(
-      movimiento.totales?.costoEstimado
-    )}
-  </p>
-
-  <p>
-    <b>Venta:</b>
-    ${money(
-      movimiento.totales?.ventaEstimado
-    )}
-  </p>
-
-</div>
-```
-
-`;
-
-html += `
-
-```
-<table style="
-  width:100%;
-  border-collapse:collapse;
-">
-
-  <thead>
-
-    <tr>
-
-      <th>Código</th>
-
-      <th>Descripción</th>
-
-      <th>Cantidad</th>
-
-      <th>Motivo</th>
-
-      <th>Comentario</th>
-
-      <th>Costo</th>
-
-      <th>Venta</th>
-
-    </tr>
-
-  </thead>
-
-  <tbody>
-```
-
-`;
-
-(movimiento.productos || [])
-.forEach(producto=>{
-
-```
-html += `
-
-  <tr>
-
-    <td>
-      ${producto.codigo || ""}
-    </td>
-
-    <td>
-      ${producto.descripcion || ""}
-    </td>
-
-    <td>
-      ${number(
-        producto.cantidad
-      )}
-    </td>
-
-    <td>
-      ${producto.motivo || ""}
-    </td>
-
-    <td>
-      ${producto.comentario || ""}
-    </td>
-
-    <td>
-      ${money(
-        producto.subtotalCosto
-      )}
-    </td>
-
-    <td>
-      ${money(
-        producto.subtotalVenta
-      )}
-    </td>
-
-  </tr>
-
-`;
-```
-
-});
-
-html += `
-
-```
-  </tbody>
-
-</table>
-```
-
-`;
-
-$("detalleMovimiento")
-.innerHTML = html;
-
-$("modalDetalle")
-.style.display = "flex";
-
-}
-
-function aplicarFiltros(){
-
-const sucursal =
-$("filtroSucursal").value;
-
-const tipo =
-$("filtroTipo").value;
-
-const fechaInicial =
-$("fechaInicial").value;
-
-const fechaFinal =
-$("fechaFinal").value;
-
-let datos =
-[...movimientos];
-
-if(sucursal){
-
-```
-datos =
-  datos.filter(
-    x =>
-      x.sucursal === sucursal
+  $("cerrarModal")?.addEventListener(
+    "click",
+    () => {
+      $("modalDetalle").style.display = "none";
+    }
   );
-```
 
-}
-
-if(tipo){
-
-```
-datos =
-  datos.filter(
-    x =>
-      x.tipo === tipo
-  );
-```
-
-}
-
-if(fechaInicial){
-
-```
-datos =
-  datos.filter(x=>{
-
-    const fecha =
-      (x.creadoEnLocal || "")
-      .substring(0,10);
-
-    return fecha >= fechaInicial;
-
+  window.addEventListener("click", e => {
+    if (e.target === $("modalDetalle")) {
+      $("modalDetalle").style.display = "none";
+    }
   });
-```
-
 }
 
-if(fechaFinal){
+async function cargarDashboard() {
+  movimientos = [];
 
-```
-datos =
-  datos.filter(x=>{
+  const sucursales = await obtenerSucursales();
 
-    const fecha =
-      (x.creadoEnLocal || "")
-      .substring(0,10);
+  llenarComboSucursales(sucursales);
 
-    return fecha <= fechaFinal;
+  for (const sucursal of sucursales) {
+    await cargarSucursal(sucursal);
+  }
 
-  });
-```
+  pintarDashboard(movimientos);
 
+  $("ultimaActualizacion").textContent =
+    "Actualizado: " +
+    new Date().toLocaleString("es-MX");
 }
 
-const tbody =
-$("tablaHistorial");
+function llenarComboSucursales(sucursales) {
+  const select = $("filtroSucursal");
 
-tbody.innerHTML = "";
+  if (!select) return;
 
-datos
-.sort((a,b)=>
-
-```
-  (b.creadoEnLocal || "")
-  .localeCompare(
-    a.creadoEnLocal || ""
-  )
-
-)
-.forEach(m=>{
-
-  const tr =
-    document.createElement("tr");
-
-  tr.innerHTML = `
-
-    <td>
-      ${fechaCorta(
-        m.creadoEnLocal
-      )}
-    </td>
-
-    <td>
-      ${m.sucursal}
-    </td>
-
-    <td>
-      ${m.tipo}
-    </td>
-
-    <td>
-      ${m.folio || ""}
-    </td>
-
-    <td>
-      ${m.estado || ""}
-    </td>
-
-    <td>
-      ${number(
-        m.totales?.piezas
-      )}
-    </td>
-
-    <td>
-      ${money(
-        m.totales?.costoEstimado
-      )}
-    </td>
-
-    <td>
-      ${money(
-        m.totales?.ventaEstimado
-      )}
-    </td>
-
+  select.innerHTML = `
+    <option value="">
+      Todas las sucursales
+    </option>
   `;
 
-  tr.onclick =
-    ()=>abrirDetalle(m);
+  sucursales.forEach(sucursal => {
+    const option = document.createElement("option");
 
-  tbody.appendChild(tr);
+    option.value = sucursal;
+    option.textContent = sucursal;
 
-});
-```
-
-}
-function renderGraficas(){
-
-const resumenMermas = {};
-const resumenDevoluciones = {};
-
-movimientos.forEach(m=>{
-
-```
-if(m.tipo === "MERMA"){
-
-  resumenMermas[m.sucursal] =
-    (resumenMermas[m.sucursal] || 0) +
-    (m.totales?.piezas || 0);
-
+    select.appendChild(option);
+  });
 }
 
-if(m.tipo === "DEVOLUCION"){
+async function cargarSucursal(sucursal) {
+  const tiendaRef = db
+    .collection("TIENDAS")
+    .doc(sucursal);
 
-  resumenDevoluciones[m.sucursal] =
-    (resumenDevoluciones[m.sucursal] || 0) +
-    (m.totales?.piezas || 0);
+  const mermasData =
+    await leerColeccionFlexible(
+      tiendaRef,
+      COLECCIONES_MERMA
+    );
 
-}
-```
+  agregarMovimientosDesdeData(
+    mermasData,
+    sucursal,
+    "MERMA"
+  );
 
-});
+  const devolucionesData =
+    await leerColeccionFlexible(
+      tiendaRef,
+      COLECCIONES_DEVOLUCION
+    );
 
-if(chartMermas){
-
-```
-chartMermas.destroy();
-```
-
-}
-
-if(chartDevoluciones){
-
-```
-chartDevoluciones.destroy();
-```
-
-}
-
-chartMermas = new Chart(
-
-```
-$("chartMermas"),
-
-{
-
-  type:"bar",
-
-  data:{
-
-    labels:
-      Object.keys(
-        resumenMermas
-      ),
-
-    datasets:[{
-
-      label:"Piezas Mermadas",
-
-      data:
-        Object.values(
-          resumenMermas
-        )
-
-    }]
-
-  },
-
-  options:{
-
-    responsive:true,
-
-    maintainAspectRatio:false
-
-  }
-
-}
-```
-
-);
-
-chartDevoluciones = new Chart(
-
-```
-$("chartDevoluciones"),
-
-{
-
-  type:"bar",
-
-  data:{
-
-    labels:
-      Object.keys(
-        resumenDevoluciones
-      ),
-
-    datasets:[{
-
-      label:"Piezas Devueltas",
-
-      data:
-        Object.values(
-          resumenDevoluciones
-        )
-
-    }]
-
-  },
-
-  options:{
-
-    responsive:true,
-
-    maintainAspectRatio:false
-
-  }
-
-}
-```
-
-);
-
+  agregarMovimientosDesdeData(
+    devolucionesData,
+    sucursal,
+    "DEVOLUCION"
+  );
 }
 
-function exportarExcel(){
+function agregarMovimientosDesdeData(resultado, sucursal, tipo) {
+  if (!resultado) return;
 
-const datos = [];
+  resultado.documentos.forEach(item => {
+    const data = item.data || {};
 
-movimientos.forEach(m=>{
+    movimientos.push({
+      id: item.id,
+      coleccion: item.coleccion,
+      sucursal,
+      tipo,
+      ...data,
+      productos: obtenerProductos(data),
+      totales: calcularTotales(data)
+    });
+  });
+}
 
-```
-(m.productos || []).forEach(p=>{
+function pintarDashboard(datos) {
+  actualizarIndicadores(datos);
+  renderHistorial(datos);
+  renderGraficas(datos);
+}
 
-  datos.push({
+function actualizarIndicadores(datos = movimientos) {
+  const mermas =
+    datos.filter(x => x.tipo === "MERMA");
 
-    Fecha:
-      m.creadoEnLocal || "",
+  const devoluciones =
+    datos.filter(x => x.tipo === "DEVOLUCION");
 
-    Sucursal:
-      m.sucursal || "",
+  $("totalMermas").textContent =
+    number(mermas.length);
 
-    Tipo:
-      m.tipo || "",
+  $("totalDevoluciones").textContent =
+    number(devoluciones.length);
 
-    Folio:
-      m.folio || "",
+  $("piezasMermadas").textContent =
+    number(sumar(mermas, "piezas"));
 
-    Estado:
-      m.estado || "",
+  $("piezasDevueltas").textContent =
+    number(sumar(devoluciones, "piezas"));
 
-    Codigo:
-      p.codigo || "",
+  $("costoMermas").textContent =
+    money(sumar(mermas, "costoEstimado"));
 
-    Descripcion:
-      p.descripcion || "",
+  $("costoDevoluciones").textContent =
+    money(sumar(devoluciones, "costoEstimado"));
 
-    Cantidad:
-      p.cantidad || 0,
+  $("ventaMermas").textContent =
+    money(sumar(mermas, "ventaEstimado"));
 
-    Motivo:
-      p.motivo || "",
+  $("ventaDevoluciones").textContent =
+    money(sumar(devoluciones, "ventaEstimado"));
+}
 
-    Comentario:
-      p.comentario || "",
+function sumar(datos, campo) {
+  return datos.reduce(
+    (acc, item) =>
+      acc + Number(item.totales?.[campo] || 0),
+    0
+  );
+}
 
-    Costo:
-      p.subtotalCosto || 0,
+function renderHistorial(datos = movimientos) {
+  const tbody = $("tablaHistorial");
 
-    Venta:
-      p.subtotalVenta || 0
+  if (!tbody) return;
 
+  tbody.innerHTML = "";
+
+  const ordenados = [...datos].sort((a, b) => {
+    const fa = fechaISO(
+      a.creadoEnLocal ||
+      a.creadoEn ||
+      a.fecha
+    );
+
+    const fb = fechaISO(
+      b.creadoEnLocal ||
+      b.creadoEn ||
+      b.fecha
+    );
+
+    return fb.localeCompare(fa);
   });
 
-});
-```
+  if (!ordenados.length) {
+    const tr = document.createElement("tr");
 
-});
+    tr.innerHTML = `
+      <td colspan="8" style="text-align:center;color:#777;">
+        No hay movimientos para mostrar
+      </td>
+    `;
 
-const ws =
-XLSX.utils.json_to_sheet(
-datos
-);
+    tbody.appendChild(tr);
 
-const wb =
-XLSX.utils.book_new();
+    return;
+  }
 
-XLSX.utils.book_append_sheet(
-wb,
-ws,
-"Historial"
-);
+  ordenados.forEach(movimiento => {
+    const tr = document.createElement("tr");
 
-XLSX.writeFile(
-wb,
-"Dashboard_Mermas_Devoluciones.xlsx"
-);
+    tr.innerHTML = `
+      <td>
+        ${fechaCorta(
+          movimiento.creadoEnLocal ||
+          movimiento.creadoEn ||
+          movimiento.fecha
+        )}
+      </td>
 
+      <td>
+        ${movimiento.sucursal || ""}
+      </td>
+
+      <td>
+        ${movimiento.tipo || ""}
+      </td>
+
+      <td>
+        ${movimiento.folio || ""}
+      </td>
+
+      <td>
+        ${movimiento.estado || ""}
+      </td>
+
+      <td>
+        ${number(movimiento.totales?.piezas)}
+      </td>
+
+      <td>
+        ${money(movimiento.totales?.costoEstimado)}
+      </td>
+
+      <td>
+        ${money(movimiento.totales?.ventaEstimado)}
+      </td>
+    `;
+
+    tr.addEventListener(
+      "click",
+      () => abrirDetalle(movimiento)
+    );
+
+    tbody.appendChild(tr);
+  });
 }
 
-window.addEventListener(
-"click",
-e => {
+function abrirDetalle(movimiento) {
+  const productos = obtenerProductos(movimiento);
 
-```
-if(
-  e.target ===
-  $("modalDetalle")
-){
+  let html = `
+    <div style="
+      margin-bottom:20px;
+      padding:15px;
+      background:#f7f7f7;
+      border-radius:10px;
+    ">
 
-  $("modalDetalle")
-    .style.display =
-      "none";
+      <h3>
+        ${movimiento.folio || "Sin folio"}
+      </h3>
 
+      <p>
+        <b>Sucursal:</b>
+        ${movimiento.sucursal || ""}
+      </p>
+
+      <p>
+        <b>Tipo:</b>
+        ${movimiento.tipo || ""}
+      </p>
+
+      <p>
+        <b>Estado:</b>
+        ${movimiento.estado || ""}
+      </p>
+
+      <p>
+        <b>Colección:</b>
+        ${movimiento.coleccion || ""}
+      </p>
+
+      <p>
+        <b>Fecha:</b>
+        ${fechaCorta(
+          movimiento.creadoEnLocal ||
+          movimiento.creadoEn ||
+          movimiento.fecha
+        )}
+      </p>
+
+      <p>
+        <b>Piezas:</b>
+        ${number(movimiento.totales?.piezas)}
+      </p>
+
+      <p>
+        <b>Costo:</b>
+        ${money(movimiento.totales?.costoEstimado)}
+      </p>
+
+      <p>
+        <b>Venta:</b>
+        ${money(movimiento.totales?.ventaEstimado)}
+      </p>
+
+    </div>
+  `;
+
+  html += `
+    <table style="
+      width:100%;
+      border-collapse:collapse;
+    ">
+
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Descripción</th>
+          <th>Cantidad</th>
+          <th>Motivo</th>
+          <th>Comentario</th>
+          <th>Costo</th>
+          <th>Venta</th>
+        </tr>
+      </thead>
+
+      <tbody>
+  `;
+
+  if (!productos.length) {
+    html += `
+      <tr>
+        <td colspan="7" style="text-align:center;color:#777;">
+          Sin productos en el movimiento
+        </td>
+      </tr>
+    `;
+  }
+
+  productos.forEach(producto => {
+    html += `
+      <tr>
+        <td>
+          ${producto.codigo || producto.codigoBarra || ""}
+        </td>
+
+        <td>
+          ${producto.descripcion || producto.concepto || ""}
+        </td>
+
+        <td>
+          ${number(producto.cantidad || producto.piezas || 0)}
+        </td>
+
+        <td>
+          ${producto.motivo || ""}
+        </td>
+
+        <td>
+          ${producto.comentario || producto.observacion || ""}
+        </td>
+
+        <td>
+          ${money(
+            producto.subtotalCosto ||
+            producto.costoTotal ||
+            producto.totalCosto ||
+            0
+          )}
+        </td>
+
+        <td>
+          ${money(
+            producto.subtotalVenta ||
+            producto.ventaTotal ||
+            producto.totalVenta ||
+            0
+          )}
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `
+      </tbody>
+    </table>
+  `;
+
+  $("detalleMovimiento").innerHTML = html;
+  $("modalDetalle").style.display = "flex";
 }
-```
 
+function obtenerDatosFiltrados() {
+  const sucursal = $("filtroSucursal").value;
+  const tipo = $("filtroTipo").value;
+  const fechaInicial = $("fechaInicial").value;
+  const fechaFinal = $("fechaFinal").value;
+
+  let datos = [...movimientos];
+
+  if (sucursal) {
+    datos = datos.filter(
+      x => x.sucursal === sucursal
+    );
+  }
+
+  if (tipo) {
+    datos = datos.filter(
+      x => x.tipo === tipo
+    );
+  }
+
+  if (fechaInicial) {
+    datos = datos.filter(x => {
+      const fecha = fechaISO(
+        x.creadoEnLocal ||
+        x.creadoEn ||
+        x.fecha
+      );
+
+      return fecha && fecha >= fechaInicial;
+    });
+  }
+
+  if (fechaFinal) {
+    datos = datos.filter(x => {
+      const fecha = fechaISO(
+        x.creadoEnLocal ||
+        x.creadoEn ||
+        x.fecha
+      );
+
+      return fecha && fecha <= fechaFinal;
+    });
+  }
+
+  return datos;
 }
-);
+
+function aplicarFiltros() {
+  const datos = obtenerDatosFiltrados();
+
+  pintarDashboard(datos);
+}
+
+function renderGraficas(datos = movimientos) {
+  const resumenMermas =
+    agruparPorSucursal(datos, "MERMA");
+
+  const resumenDevoluciones =
+    agruparPorSucursal(datos, "DEVOLUCION");
+
+  if (chartMermas) {
+    chartMermas.destroy();
+  }
+
+  if (chartDevoluciones) {
+    chartDevoluciones.destroy();
+  }
+
+  chartMermas = crearGrafica(
+    "chartMermas",
+    "Piezas Mermadas",
+    resumenMermas
+  );
+
+  chartDevoluciones = crearGrafica(
+    "chartDevoluciones",
+    "Piezas Devueltas",
+    resumenDevoluciones
+  );
+}
+
+function agruparPorSucursal(datos, tipo) {
+  const resumen = {};
+
+  datos
+    .filter(m => m.tipo === tipo)
+    .forEach(m => {
+      resumen[m.sucursal] =
+        (resumen[m.sucursal] || 0) +
+        Number(m.totales?.piezas || 0);
+    });
+
+  return resumen;
+}
+
+function crearGrafica(canvasId, label, resumen) {
+  const canvas = $(canvasId);
+
+  if (!canvas) return null;
+
+  return new Chart(canvas, {
+    type: "bar",
+
+    data: {
+      labels: Object.keys(resumen),
+
+      datasets: [
+        {
+          label,
+          data: Object.values(resumen)
+        }
+      ]
+    },
+
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+
+      plugins: {
+        legend: {
+          display: true
+        }
+      },
+
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+function exportarExcel() {
+  const datosFiltrados = obtenerDatosFiltrados();
+
+  const datos = [];
+
+  datosFiltrados.forEach(m => {
+    const productos = obtenerProductos(m);
+
+    if (!productos.length) {
+      datos.push({
+        Fecha: fechaCorta(
+          m.creadoEnLocal ||
+          m.creadoEn ||
+          m.fecha
+        ),
+        Sucursal: m.sucursal || "",
+        Tipo: m.tipo || "",
+        Folio: m.folio || "",
+        Estado: m.estado || "",
+        Codigo: "",
+        Descripcion: "",
+        Cantidad: m.totales?.piezas || 0,
+        Motivo: "",
+        Comentario: "",
+        Costo: m.totales?.costoEstimado || 0,
+        Venta: m.totales?.ventaEstimado || 0
+      });
+
+      return;
+    }
+
+    productos.forEach(p => {
+      datos.push({
+        Fecha: fechaCorta(
+          m.creadoEnLocal ||
+          m.creadoEn ||
+          m.fecha
+        ),
+        Sucursal: m.sucursal || "",
+        Tipo: m.tipo || "",
+        Folio: m.folio || "",
+        Estado: m.estado || "",
+        Codigo: p.codigo || p.codigoBarra || "",
+        Descripcion: p.descripcion || p.concepto || "",
+        Cantidad: Number(p.cantidad || p.piezas || 0),
+        Motivo: p.motivo || "",
+        Comentario: p.comentario || p.observacion || "",
+        Costo: Number(
+          p.subtotalCosto ||
+          p.costoTotal ||
+          p.totalCosto ||
+          0
+        ),
+        Venta: Number(
+          p.subtotalVenta ||
+          p.ventaTotal ||
+          p.totalVenta ||
+          0
+        )
+      });
+    });
+  });
+
+  const ws = XLSX.utils.json_to_sheet(datos);
+
+  const wb = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    ws,
+    "Historial"
+  );
+
+  XLSX.writeFile(
+    wb,
+    "Dashboard_Mermas_Devoluciones.xlsx"
+  );
+}
