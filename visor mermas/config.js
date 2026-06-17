@@ -23,7 +23,7 @@ const db = firebase.firestore();
 // ===============================
 
 const APP_NAME = "Dashboard Mermas y Devoluciones";
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.0.1";
 
 
 // ===============================
@@ -46,100 +46,189 @@ const COLECCIONES_DEVOLUCION = [
 
 
 // ===============================
-// FORMATO MONEDA
+// FORMATOS
 // ===============================
 
 const money = valor =>
-  Number(valor || 0)
-    .toLocaleString(
-      "es-MX",
-      {
-        style: "currency",
-        currency: "MXN"
-      }
-    );
-
-
-// ===============================
-// FORMATO NUMERO
-// ===============================
+  Number(valor || 0).toLocaleString("es-MX", {
+    style: "currency",
+    currency: "MXN"
+  });
 
 const number = valor =>
-  Number(valor || 0)
-    .toLocaleString("es-MX");
+  Number(valor || 0).toLocaleString("es-MX");
 
+function normalizarFecha(fecha) {
+  if (!fecha) return null;
 
-// ===============================
-// FECHA CORTA
-// ===============================
-
-function fechaCorta(fecha){
-
-  if(!fecha) return "";
-
-  try{
-
-    return new Date(fecha)
-      .toLocaleString("es-MX");
-
-  }catch{
-
-    return fecha;
-
+  // Firebase Timestamp
+  if (fecha && typeof fecha.toDate === "function") {
+    return fecha.toDate();
   }
 
+  // Timestamp serializado: { seconds, nanoseconds }
+  if (fecha && typeof fecha.seconds === "number") {
+    return new Date(fecha.seconds * 1000);
+  }
+
+  const d = new Date(fecha);
+
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function fechaCorta(fecha) {
+  const d = normalizarFecha(fecha);
+
+  if (!d) {
+    return fecha || "";
+  }
+
+  return d.toLocaleString("es-MX", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function fechaISO(fecha) {
+  const d = normalizarFecha(fecha);
+
+  if (!d) return "";
+
+  return d.toISOString().substring(0, 10);
 }
 
 
 // ===============================
-// LEE COLECCION FLEXIBLE
-// MERMA / MERMAS
-// DEVOLUCION / DEVOLUCIONES
+// PRODUCTOS Y TOTALES FLEXIBLES
 // ===============================
 
-async function leerColeccionFlexible(
-  docRef,
-  nombres
-){
+function obtenerProductos(movimiento) {
+  if (!movimiento) return [];
 
-  for(const nombre of nombres){
-
-    try{
-
-      const snap =
-        await docRef
-          .collection(nombre)
-          .get();
-
-      if(!snap.empty){
-
-        console.log(
-          "Colección encontrada:",
-          nombre,
-          "Registros:",
-          snap.size
-        );
-
-        return {
-          nombre,
-          snap
-        };
-
-      }
-
-    }catch(error){
-
-      console.log(
-        "No existe:",
-        nombre
-      );
-
-    }
-
+  if (Array.isArray(movimiento.productos)) {
+    return movimiento.productos;
   }
 
-  return null;
+  if (Array.isArray(movimiento.items)) {
+    return movimiento.items;
+  }
 
+  if (Array.isArray(movimiento.detalle)) {
+    return movimiento.detalle;
+  }
+
+  return [];
+}
+
+function calcularTotales(movimiento) {
+  const productos = obtenerProductos(movimiento);
+
+  const piezasProductos = productos.reduce(
+    (acc, p) =>
+      acc + Number(p.cantidad || p.piezas || 0),
+    0
+  );
+
+  const costoProductos = productos.reduce(
+    (acc, p) =>
+      acc + Number(
+        p.subtotalCosto ||
+        p.costoTotal ||
+        p.totalCosto ||
+        0
+      ),
+    0
+  );
+
+  const ventaProductos = productos.reduce(
+    (acc, p) =>
+      acc + Number(
+        p.subtotalVenta ||
+        p.ventaTotal ||
+        p.totalVenta ||
+        0
+      ),
+    0
+  );
+
+  return {
+    piezas: Number(
+      movimiento.totales?.piezas ??
+      movimiento.piezas ??
+      piezasProductos ??
+      0
+    ),
+
+    costoEstimado: Number(
+      movimiento.totales?.costoEstimado ??
+      movimiento.costoEstimado ??
+      costoProductos ??
+      0
+    ),
+
+    ventaEstimado: Number(
+      movimiento.totales?.ventaEstimado ??
+      movimiento.ventaEstimado ??
+      ventaProductos ??
+      0
+    )
+  };
+}
+
+
+// ===============================
+// LEE COLECCIONES FLEXIBLES
+// ===============================
+
+async function leerColeccionFlexible(docRef, nombres) {
+  const documentos = [];
+  const encontradas = [];
+
+  for (const nombre of nombres) {
+    try {
+      const snap = await docRef
+        .collection(nombre)
+        .get();
+
+      if (!snap.empty) {
+        encontradas.push(nombre);
+
+        snap.forEach(doc => {
+          documentos.push({
+            id: doc.id,
+            coleccion: nombre,
+            data: doc.data()
+          });
+        });
+      }
+
+    } catch (error) {
+      console.warn(
+        "No se pudo leer colección:",
+        nombre,
+        error
+      );
+    }
+  }
+
+  if (!documentos.length) {
+    return null;
+  }
+
+  console.log(
+    "Colecciones encontradas:",
+    encontradas,
+    "Registros:",
+    documentos.length
+  );
+
+  return {
+    nombres: encontradas,
+    documentos
+  };
 }
 
 
@@ -147,15 +236,12 @@ async function leerColeccionFlexible(
 // OBTENER SUCURSALES
 // ===============================
 
-async function obtenerSucursales(){
+async function obtenerSucursales() {
+  const snap = await db
+    .collection("TIENDAS")
+    .get();
 
-  const snap =
-    await db
-      .collection("TIENDAS")
-      .get();
-
-  return snap.docs.map(
-    doc => doc.id
-  );
-
+  return snap.docs
+    .map(doc => doc.id)
+    .sort((a, b) => a.localeCompare(b, "es"));
 }
