@@ -67,13 +67,33 @@ function llenarComboSucursales(sucursales) {
 
   if (!select) return;
 
+  const sucursalesFijas = [
+    "ALLENDE 1",
+    "ALLENDE 2",
+    "CENTRAL",
+    "MONTEMORELOS",
+    "OSITO",
+    "PROVILEON",
+    "RIO VERDE",
+    "RUTA1",
+    "RUTA2"
+  ];
+
+  const listaFinal = [
+    ...new Set([
+      ...sucursalesFijas,
+      ...(sucursales || [])
+    ].map(s => String(s).trim().toUpperCase()))
+  ].filter(s => s && s !== "CONFIG")
+   .sort((a, b) => a.localeCompare(b, "es"));
+
   select.innerHTML = `
     <option value="">
       Todas las sucursales
     </option>
   `;
 
-  sucursales.forEach(sucursal => {
+  listaFinal.forEach(sucursal => {
     const option = document.createElement("option");
 
     option.value = sucursal;
@@ -81,6 +101,8 @@ function llenarComboSucursales(sucursales) {
 
     select.appendChild(option);
   });
+
+  console.log("Sucursales cargadas en combo:", listaFinal);
 }
 
 async function cargarSucursal(sucursal) {
