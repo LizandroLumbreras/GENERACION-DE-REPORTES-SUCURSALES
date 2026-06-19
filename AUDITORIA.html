@@ -1,0 +1,2556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#991b1b" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <title>PROVSOFT | Auditoría de Sucursal</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #991b1b;
+      --primary-dark: #7f1d1d;
+      --primary-soft: #fef2f2;
+      --accent: #dc2626;
+      --success: #15803d;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --surface: #ffffff;
+      --bg: #f5f6f8;
+      --shadow: 0 12px 32px rgba(31, 41, 55, 0.09);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(153, 27, 27, 0.10), transparent 26rem),
+        linear-gradient(180deg, #fff 0, var(--bg) 24rem);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary), #b91c1c);
+      box-shadow: 0 8px 25px rgba(127, 29, 29, 0.25);
+    }
+
+    .header-inner {
+      width: min(1200px, calc(100% - 28px));
+      min-height: 74px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.24);
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(1rem, 2.5vw, 1.35rem);
+      line-height: 1.1;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      font-size: .8rem;
+      color: rgba(255,255,255,.82);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
+      font-size: .78rem;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #86efac;
+      box-shadow: 0 0 0 4px rgba(134, 239, 172, .18);
+    }
+
+    main {
+      width: min(1200px, calc(100% - 28px));
+      margin: 28px auto 60px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.4fr .6fr;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .hero-card,
+    .progress-card,
+    .card {
+      background: rgba(255,255,255,.96);
+      border: 1px solid rgba(229, 231, 235, .9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 26px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      right: -80px;
+      bottom: -100px;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, rgba(153,27,27,.17), rgba(220,38,38,.02));
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 10px;
+      color: var(--primary);
+      font-weight: 800;
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .hero-card h2 {
+      margin: 0;
+      max-width: 700px;
+      font-size: clamp(1.65rem, 4vw, 2.5rem);
+      line-height: 1.05;
+      letter-spacing: -.04em;
+    }
+
+    .hero-card p {
+      margin: 13px 0 0;
+      max-width: 720px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .progress-card {
+      padding: 22px;
+      display: grid;
+      align-content: center;
+      gap: 13px;
+    }
+
+    .progress-card strong {
+      font-size: .9rem;
+    }
+
+    .progress-track {
+      height: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--primary), #ef4444);
+      transition: width .25s ease;
+    }
+
+    .progress-text {
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .card {
+      padding: 24px;
+      margin-top: 18px;
+    }
+
+    .card-title {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .title-left {
+      display: flex;
+      gap: 13px;
+      align-items: flex-start;
+    }
+
+    .step {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      color: white;
+      background: linear-gradient(145deg, var(--primary), var(--accent));
+      font-weight: 800;
+      box-shadow: 0 7px 16px rgba(153, 27, 27, .18);
+    }
+
+    .card-title h3 {
+      margin: 2px 0 4px;
+      font-size: 1.12rem;
+    }
+
+    .card-title p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .86rem;
+      line-height: 1.45;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field label {
+      font-size: .82rem;
+      font-weight: 700;
+      color: #374151;
+    }
+
+    .required::after {
+      content: " *";
+      color: var(--danger);
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid #d7dce3;
+      border-radius: 12px;
+      background: #fff;
+      color: var(--ink);
+      outline: none;
+      transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+
+    input,
+    select {
+      min-height: 47px;
+      padding: 0 13px;
+    }
+
+    textarea {
+      min-height: 112px;
+      padding: 12px 13px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(153, 27, 27, .10);
+      background: #fff;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #9ca3af;
+    }
+
+    .section-note {
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border-left: 4px solid var(--primary);
+      border-radius: 10px;
+      background: var(--primary-soft);
+      color: #7f1d1d;
+      font-size: .83rem;
+      line-height: 1.5;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 850px;
+      border-collapse: collapse;
+      background: #fff;
+    }
+
+    th {
+      padding: 12px 10px;
+      text-align: left;
+      color: #4b5563;
+      background: #f9fafb;
+      border-bottom: 1px solid var(--line);
+      font-size: .76rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    td {
+      padding: 9px;
+      border-bottom: 1px solid #f0f2f5;
+      vertical-align: middle;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    td input {
+      min-height: 42px;
+      border-radius: 9px;
+    }
+
+    .qty {
+      min-width: 95px;
+    }
+
+    .product-search-cell {
+      position: relative;
+      min-width: 290px;
+    }
+
+    .product-search-input {
+      padding-right: 38px;
+    }
+
+    .product-search-indicator {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+      font-size: .9rem;
+    }
+
+    .product-suggestions {
+      position: absolute;
+      z-index: 35;
+      left: 0;
+      right: 0;
+      top: calc(100% + 5px);
+      max-height: 285px;
+      overflow-y: auto;
+      border: 1px solid #d7dce3;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 16px 35px rgba(31, 41, 55, .17);
+      display: none;
+    }
+
+    .product-suggestions.show {
+      display: block;
+    }
+
+    .suggestion-item {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid #f0f2f5;
+      background: #fff;
+      text-align: left;
+      padding: 11px 12px;
+      display: grid;
+      gap: 3px;
+    }
+
+    .suggestion-item:last-child {
+      border-bottom: 0;
+    }
+
+    .suggestion-item:hover,
+    .suggestion-item:focus {
+      background: var(--primary-soft);
+      outline: none;
+    }
+
+    .suggestion-code {
+      color: var(--primary);
+      font-size: .76rem;
+      font-weight: 800;
+    }
+
+    .suggestion-name {
+      color: var(--ink);
+      font-size: .84rem;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .suggestion-empty {
+      padding: 13px;
+      color: var(--muted);
+      font-size: .82rem;
+      text-align: center;
+    }
+
+
+    .single-product-entry {
+      display: grid;
+      grid-template-columns: minmax(280px, 1.8fr) minmax(130px, .45fr) minmax(190px, .8fr) auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 13px;
+    }
+
+    .product-main-search,
+    .product-main-search .product-search-cell {
+      min-width: 0;
+    }
+
+    .product-add-button {
+      min-height: 47px;
+      white-space: nowrap;
+    }
+
+    .selected-product-card {
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border: 1px solid #fecaca;
+      border-radius: 13px;
+      background: var(--primary-soft);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .selected-product-card[hidden] { display: none; }
+
+    .selected-product-card > div {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .selected-product-card strong {
+      overflow-wrap: anywhere;
+    }
+
+    .selected-product-code {
+      color: var(--primary);
+      font-size: .76rem;
+      font-weight: 800;
+    }
+
+    .selected-product-card button {
+      flex: 0 0 auto;
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 50%;
+      color: #fff;
+      background: var(--primary);
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
+    .product-list-wrap {
+      margin-top: 8px;
+    }
+
+    .product-list-wrap table {
+      min-width: 760px;
+    }
+
+    .product-row-code {
+      color: var(--primary);
+      font-weight: 800;
+      font-size: .82rem;
+    }
+
+    .product-row-description {
+      font-weight: 600;
+    }
+
+    .product-row-qty {
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .empty-products {
+      padding: 18px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed #d1d5db;
+      border-radius: 12px;
+      margin-top: 10px;
+      font-size: .84rem;
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: var(--danger);
+      background: #fef2f2;
+      font-size: 1.1rem;
+      transition: transform .15s ease, background .15s ease;
+    }
+
+    .icon-btn:hover {
+      transform: translateY(-1px);
+      background: #fee2e2;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .toolbar small {
+      color: var(--muted);
+    }
+
+    .btn {
+      min-height: 44px;
+      border: 0;
+      border-radius: 12px;
+      padding: 0 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      font-weight: 750;
+      transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: .6;
+    }
+
+    .btn-primary {
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary-dark), var(--accent));
+      box-shadow: 0 9px 18px rgba(153, 27, 27, .20);
+    }
+
+    .btn-secondary {
+      color: var(--primary);
+      background: #fff;
+      border: 1px solid #fecaca;
+    }
+
+    .btn-success {
+      color: #fff;
+      background: linear-gradient(135deg, #166534, #16a34a);
+      box-shadow: 0 9px 18px rgba(21, 128, 61, .18);
+    }
+
+    .inspection-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .inspection-box {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(180deg, #fff, #fcfcfd);
+    }
+
+    .inspection-box h4 {
+      margin: 0 0 11px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: .93rem;
+    }
+
+    .inspection-box h4 span {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      background: var(--primary-soft);
+    }
+
+    .photo-drop {
+      position: relative;
+      min-height: 170px;
+      border: 2px dashed #d1d5db;
+      border-radius: 16px;
+      background: #fafafa;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 20px;
+      transition: border-color .18s ease, background .18s ease;
+    }
+
+    .photo-drop:hover {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .photo-drop input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      min-height: 100%;
+    }
+
+    .photo-drop strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .photo-drop p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .82rem;
+      line-height: 1.45;
+    }
+
+    .photo-icon {
+      width: 50px;
+      height: 50px;
+      margin: 0 auto 10px;
+      display: grid;
+      place-items: center;
+      border-radius: 15px;
+      color: var(--primary);
+      background: #fee2e2;
+      font-size: 1.45rem;
+    }
+
+    .photo-counter {
+      margin-top: 11px;
+      font-size: .82rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .photo-preview {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .photo-item {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 4 / 3;
+      border-radius: 13px;
+      border: 1px solid var(--line);
+      background: #f3f4f6;
+    }
+
+    .photo-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .photo-item button {
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 31px;
+      height: 31px;
+      border: 0;
+      border-radius: 50%;
+      color: white;
+      background: rgba(127, 29, 29, .9);
+      font-weight: 900;
+    }
+
+    .final-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .submit-btn {
+      min-height: 52px;
+      padding-inline: 24px;
+      font-size: .95rem;
+    }
+
+    .result-box {
+      display: none;
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px solid #bbf7d0;
+      border-radius: 14px;
+      background: #f0fdf4;
+    }
+
+    .result-box.show {
+      display: block;
+    }
+
+    .result-box h4 {
+      margin: 0 0 8px;
+      color: #166534;
+    }
+
+    .result-box p {
+      margin: 0;
+      color: #3f6212;
+      font-size: .86rem;
+      line-height: 1.5;
+    }
+
+    .result-actions {
+      margin-top: 13px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .loader {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 50;
+      max-width: min(390px, calc(100% - 36px));
+      padding: 14px 16px;
+      border-radius: 13px;
+      color: white;
+      box-shadow: 0 14px 35px rgba(0,0,0,.20);
+      opacity: 0;
+      transform: translateY(18px);
+      pointer-events: none;
+      transition: opacity .22s ease, transform .22s ease;
+      font-size: .87rem;
+      line-height: 1.45;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.success { background: #166534; }
+    .toast.error { background: #991b1b; }
+    .toast.info { background: #1f2937; }
+
+    footer {
+      padding: 25px 15px 40px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    @media (max-width: 850px) {
+      .hero,
+      .grid-3,
+      .inspection-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .photo-preview {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 620px) {
+      .header-inner {
+        min-height: 68px;
+      }
+
+      .status-pill {
+        display: none;
+      }
+
+      main {
+        width: min(100% - 18px, 1200px);
+        margin-top: 16px;
+      }
+
+      .hero-card,
+      .progress-card,
+      .card {
+        border-radius: 15px;
+      }
+
+      .hero-card,
+      .card {
+        padding: 18px;
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .single-product-entry {
+        grid-template-columns: 1fr;
+      }
+
+      .product-add-button {
+        width: 100%;
+      }
+
+      .card-title {
+        align-items: flex-start;
+      }
+
+      .final-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+      }
+
+      .final-actions .btn {
+        width: 100%;
+      }
+
+      .photo-preview {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+
+
+    .signature-summary {
+      display: none;
+      margin-top: 14px;
+      padding: 13px 15px;
+      border: 1px solid #bbf7d0;
+      border-radius: 13px;
+      background: #f0fdf4;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .signature-summary.show { display: flex; }
+    .signature-summary strong { color: #166534; font-size: .87rem; }
+    .signature-summary span { color: #4b5563; font-size: .8rem; }
+
+    .signature-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(17, 24, 39, .66);
+      backdrop-filter: blur(4px);
+    }
+
+    .signature-modal.show { display: flex; }
+
+    .signature-dialog {
+      width: min(650px, 100%);
+      max-height: calc(100vh - 28px);
+      overflow: auto;
+      padding: 22px;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 24px 70px rgba(0,0,0,.30);
+    }
+
+    .signature-dialog h3 { margin: 0 0 5px; }
+    .signature-dialog > p { margin: 0 0 16px; color: var(--muted); font-size: .86rem; }
+
+    .signature-canvas-wrap {
+      margin-top: 14px;
+      border: 2px dashed #cbd5e1;
+      border-radius: 14px;
+      background: #fff;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #signatureCanvas {
+      display: block;
+      width: 100%;
+      height: 230px;
+      background: #fff;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .signature-line {
+      height: 1px;
+      margin: -35px 25px 34px;
+      position: relative;
+      pointer-events: none;
+      background: #9ca3af;
+    }
+
+    .signature-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    @media print {
+      .app-header,
+      .hero,
+      .btn,
+      footer {
+        display: none !important;
+      }
+
+      body {
+        background: #fff;
+      }
+
+      main {
+        width: 100%;
+        margin: 0;
+      }
+
+      .card {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-mark">PS</div>
+        <div>
+          <h1>PROVSOFT · Auditoría de Sucursal</h1>
+          <p>Inventario, revisión operativa y evidencia fotográfica</p>
+        </div>
+      </div>
+
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        Firestore conectado
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <article class="hero-card">
+        <div class="eyebrow">✓ Control de sucursales</div>
+        <h2>Auditoría operativa completa en un solo formato</h2>
+        <p>
+          Registra productos a inventariar, observaciones de limpieza, rotación,
+          caducidades, necesidades de la tienda y evidencia fotográfica. Al finalizar,
+          se genera un PDF y todo queda guardado en Firebase.
+        </p>
+      </article>
+
+      <aside class="progress-card">
+        <strong>Avance del formulario</strong>
+        <div class="progress-track">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <div id="progressText" class="progress-text">Completa los datos principales.</div>
+      </aside>
+    </section>
+
+    <form id="auditForm" novalidate>
+      <section class="card">
+        <div class="card-title">
+          <div class="title-left">
+            <div class="step">1</div>
+            <div>
+              <h3>Datos generales de la auditoría</h3>
+              <p>Información de la sucursal, responsable y fecha de revisión.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-3">
+          <div class="field">
+            <label class="required" for="sucursal">Sucursal</label>
+            <input
+              id="sucursal"
+              name="sucursal"
+              list="sucursales"
+              placeholder="Ej. ALLENDE 1"
+              autocomplete="off"
+              required
+            />
+            <datalist id="sucursales">
+              <option value="ALLENDE 1"></option>
+              <option value="ALLENDE 2"></option>
+              <option value="CENTRAL"></option>
+              <option value="MONTEMORELOS"></option>
+              <option value="OSITO"></option>
+              <option value="PROVILEON"></option>
+              <option value="RIO VERDE"></option>
+              <option value="RUTA 1"></option>
+              <option value="CEDIS MATRIZ"></option>
+            </datalist>
+          </div>
+
+          <div class="field">
+            <label class="required" for="encargado">Nombre del encargado</label>
+            <input
+              id="encargado"
+              name="encargado"
+              placeholder="Nombre completo"
+              autocomplete="name"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label class="required" for="auditor">Persona que realiza la auditoría</label>
+            <input
+              id="auditor"
+              name="auditor"
+              placeholder="Nombre del auditor"
+              autocomplete="name"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label class="required" for="fecha">Fecha</label>
+            <input id="fecha" name="fecha" type="date" required />
+          </div>
+
+          <div class="field">
+            <label for="horaInicio">Hora de inicio</label>
+            <input id="horaInicio" name="horaInicio" type="time" />
+          </div>
+
+          <div class="field">
+            <label for="folioVisible">Folio</label>
+            <input id="folioVisible" type="text" readonly />
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <div class="title-left">
+            <div class="step">2</div>
+            <div>
+              <h3>Productos a inventariar</h3>
+              <p>Agrega todos los artículos revisados durante la auditoría.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <p class="section-note">
+          Usa un solo buscador para localizar el producto por <strong>código, descripción o código equivalente</strong>.
+          Selecciónalo, captura la cantidad física y presiona <strong>Agregar</strong>.
+        </p>
+
+        <div class="single-product-entry">
+          <div class="field product-main-search">
+            <label for="productSearch">Buscar producto</label>
+            <div class="product-search-cell">
+              <input
+                id="productSearch"
+                class="product-search-input"
+                type="search"
+                placeholder="Código, descripción o equivalente..."
+                autocomplete="off"
+              />
+              <span class="product-search-indicator">⌕</span>
+              <div id="globalProductSuggestions" class="product-suggestions"></div>
+            </div>
+          </div>
+
+          <div class="field product-quantity-field">
+            <label for="selectedProductQty">Cantidad física</label>
+            <input id="selectedProductQty" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0" disabled />
+          </div>
+
+          <div class="field product-note-field">
+            <label for="selectedProductNote">Observación</label>
+            <input id="selectedProductNote" type="text" placeholder="Opcional" disabled />
+          </div>
+
+          <button id="confirmAddProduct" class="btn btn-primary product-add-button" type="button" disabled>
+            ＋ Agregar
+          </button>
+        </div>
+
+        <div id="selectedProductCard" class="selected-product-card" hidden>
+          <div>
+            <span id="selectedProductCode" class="selected-product-code"></span>
+            <strong id="selectedProductDescription"></strong>
+          </div>
+          <button id="cancelSelectedProduct" type="button" aria-label="Cancelar selección">×</button>
+        </div>
+
+        <div class="table-wrap product-list-wrap">
+          <table aria-label="Productos a inventariar">
+            <thead>
+              <tr>
+                <th style="width: 20%">Código</th>
+                <th>Descripción del producto</th>
+                <th style="width: 16%">Cantidad física</th>
+                <th style="width: 24%">Observación</th>
+                <th style="width: 62px">Quitar</th>
+              </tr>
+            </thead>
+            <tbody id="productsBody"></tbody>
+          </table>
+        </div>
+
+        <div id="emptyProducts" class="empty-products">
+          Todavía no has agregado productos a la auditoría.
+        </div>
+
+        <div class="toolbar">
+          <small id="productCount">0 productos capturados</small>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <div class="title-left">
+            <div class="step">3</div>
+            <div>
+              <h3>Revisión de limpieza y operación</h3>
+              <p>Describe condiciones encontradas y acciones requeridas.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="inspection-grid">
+          <div class="inspection-box">
+            <h4><span>🧹</span> Limpieza de góndolas</h4>
+            <textarea
+              id="limpiezaGondolas"
+              placeholder="Ej. Góndolas limpias, retirar polvo en área de desechables..."
+            ></textarea>
+          </div>
+
+          <div class="inspection-box">
+            <h4><span>🚻</span> Limpieza de baño</h4>
+            <textarea
+              id="limpiezaBano"
+              placeholder="Ej. Baño limpio, falta jabón, revisar llave..."
+            ></textarea>
+          </div>
+
+          <div class="inspection-box">
+            <h4><span>📦</span> Estado y acomodo de productos</h4>
+            <textarea
+              id="estadoProductos"
+              placeholder="Ej. Producto bien acomodado, separar cajas dañadas..."
+            ></textarea>
+          </div>
+
+          <div class="inspection-box">
+            <h4><span>🔄</span> Rotación de producto</h4>
+            <textarea
+              id="rotacionProductos"
+              placeholder="Ej. Aplicar PEPS, pasar producto antiguo al frente..."
+            ></textarea>
+          </div>
+
+          <div class="inspection-box">
+            <h4><span>📅</span> Caducidades</h4>
+            <textarea
+              id="caducidades"
+              placeholder="Ej. Se detectaron productos próximos a caducar..."
+            ></textarea>
+          </div>
+
+          <div class="inspection-box">
+            <h4><span>🛠️</span> Mantenimiento y equipo</h4>
+            <textarea
+              id="mantenimiento"
+              placeholder="Ej. Revisar iluminación, refrigerador, anaqueles..."
+            ></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <div class="title-left">
+            <div class="step">4</div>
+            <div>
+              <h3>Comentario general, necesidades o quejas</h3>
+              <p>Registra cualquier faltante, incidencia, solicitud o recomendación.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="required" for="comentarioGeneral">Comentario general</label>
+          <textarea
+            id="comentarioGeneral"
+            style="min-height: 155px"
+            placeholder="Describe qué le hace falta a la tienda, quejas, comentarios del encargado, pendientes y acuerdos..."
+            required
+          ></textarea>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <div class="title-left">
+            <div class="step">5</div>
+            <div>
+              <h3>Evidencia fotográfica</h3>
+              <p>Se requieren mínimo 3 fotografías. Puedes seleccionar o tomar varias.</p>
+            </div>
+          </div>
+        </div>
+
+        <label class="photo-drop" for="photosInput">
+          <input
+            id="photosInput"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            multiple
+          />
+          <div>
+            <div class="photo-icon">📷</div>
+            <strong>Tomar o seleccionar fotografías</strong>
+            <p>
+              Mínimo 3 imágenes. Se comprimirán antes de subirse para reducir el consumo de datos.
+            </p>
+            <div id="photoCounter" class="photo-counter">0 fotografías seleccionadas</div>
+          </div>
+        </label>
+
+        <div id="photoPreview" class="photo-preview"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <div class="title-left">
+            <div class="step">6</div>
+            <div>
+              <h3>Guardar y generar PDF</h3>
+              <p>La información se guarda en Firestore. Las fotos y la firma se integran en el PDF descargable.</p>
+            </div>
+          </div>
+        </div>
+
+        <label style="display:flex; gap:10px; align-items:flex-start; font-size:.86rem; color:#4b5563;">
+          <input id="confirmacion" type="checkbox" style="width:18px; min-height:18px; margin-top:1px;" required />
+          <span>
+            Confirmo que la información capturada corresponde a la revisión realizada en la sucursal.
+          </span>
+        </label>
+
+        <div id="signatureSummary" class="signature-summary">
+          <div>
+            <strong>✓ Firma capturada</strong><br>
+            <span id="signatureSummaryName"></span>
+          </div>
+          <button id="editSignatureBtn" class="btn btn-secondary" type="button">Cambiar firma</button>
+        </div>
+
+        <div class="final-actions">
+          <button id="clearBtn" class="btn btn-secondary" type="button">
+            Limpiar formulario
+          </button>
+
+          <button id="submitBtn" class="btn btn-primary submit-btn" type="submit">
+            <span id="submitIcon">✓</span>
+            <span id="submitText">Guardar auditoría y generar PDF</span>
+          </button>
+        </div>
+
+        <div id="resultBox" class="result-box">
+          <h4>Auditoría guardada correctamente</h4>
+          <p id="resultText"></p>
+
+          <div class="result-actions">
+            <button id="downloadPdfBtn" class="btn btn-success" type="button">
+              Descargar PDF
+            </button>
+            <button id="sharePdfBtn" class="btn btn-secondary" type="button">
+              Compartir PDF
+            </button>
+            
+          </div>
+        </div>
+      </section>
+    </form>
+  </main>
+
+  <footer>
+    PROVSOFT · Auditoría de Sucursal · La Proveedora
+  </footer>
+
+
+  <div id="signatureModal" class="signature-modal" role="dialog" aria-modal="true" aria-labelledby="signatureTitle">
+    <div class="signature-dialog">
+      <h3 id="signatureTitle">Firma de conformidad</h3>
+      <p>Firma dentro del recuadro para confirmar la auditoría. La firma se integrará directamente en el PDF.</p>
+
+      <div class="field">
+        <label class="required" for="signatureName">Nombre de quien firma</label>
+        <input id="signatureName" type="text" placeholder="Nombre completo" autocomplete="name" />
+      </div>
+
+      <div class="signature-canvas-wrap">
+        <canvas id="signatureCanvas"></canvas>
+        <div class="signature-line"></div>
+      </div>
+
+      <div class="signature-actions">
+        <button id="cancelSignatureBtn" class="btn btn-secondary" type="button">Cancelar</button>
+        <button id="clearSignatureBtn" class="btn btn-secondary" type="button">Limpiar firma</button>
+        <button id="saveSignatureBtn" class="btn btn-primary" type="button">Guardar firma</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      setDoc,
+      updateDoc,
+      serverTimestamp,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDGyFWdM66UmjhRgkDF8dV_BYPuD47Za_0",
+      authDomain: "cigarroprov25.firebaseapp.com",
+      projectId: "cigarroprov25",
+      storageBucket: "cigarroprov25.firebasestorage.app",
+      messagingSenderId: "787918491212",
+      appId: "1:787918491212:web:08d38fd0b16a0b79066ee9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Segundo proyecto: catálogo general de productos (solo lectura).
+    const catalogFirebaseConfig = {
+      apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
+      authDomain: "inventariopv-643f1.firebaseapp.com",
+      projectId: "inventariopv-643f1",
+      storageBucket: "inventariopv-643f1.firebasestorage.app",
+      messagingSenderId: "96242533231",
+      appId: "1:96242533231:web:aae75a18fbaf9840529e9a"
+    };
+
+    const catalogApp = initializeApp(catalogFirebaseConfig, "catalogo-productos");
+    const catalogDb = getFirestore(catalogApp);
+    let productCatalog = [];
+    let productCatalogPromise = null;
+
+    const $ = (selector) => document.querySelector(selector);
+
+    const form = $("#auditForm");
+    const productsBody = $("#productsBody");
+    const photosInput = $("#photosInput");
+    const photoPreview = $("#photoPreview");
+    const submitBtn = $("#submitBtn");
+    const submitText = $("#submitText");
+    const submitIcon = $("#submitIcon");
+    const resultBox = $("#resultBox");
+    const downloadPdfBtn = $("#downloadPdfBtn");
+    const sharePdfBtn = $("#sharePdfBtn");
+    const signatureModal = $("#signatureModal");
+    const signatureCanvas = $("#signatureCanvas");
+    const signatureContext = signatureCanvas.getContext("2d");
+
+    let selectedPhotos = [];
+    let lastPdfBlob = null;
+    let lastPdfFileName = "";
+    let lastPdfUrl = "";
+    let signatureDataUrl = "";
+    let signatureName = "";
+    let signatureHasInk = false;
+
+    const today = new Date();
+    $("#fecha").value = formatDateInput(today);
+    $("#horaInicio").value = today.toTimeString().slice(0, 5);
+    refreshFolio();
+
+    function formatDateInput(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function formatDateMx(value) {
+      if (!value) return "";
+      const [year, month, day] = value.split("-");
+      return `${day}/${month}/${year}`;
+    }
+
+    function sanitizeFileName(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9_-]+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .slice(0, 60);
+    }
+
+    function createFolio() {
+      const date = new Date();
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      const hh = String(date.getHours()).padStart(2, "0");
+      const mm = String(date.getMinutes()).padStart(2, "0");
+      const ss = String(date.getSeconds()).padStart(2, "0");
+      return `AUD-${y}${m}${d}-${hh}${mm}${ss}`;
+    }
+
+    function refreshFolio() {
+      $("#folioVisible").value = createFolio();
+    }
+
+    function showToast(message, type = "info") {
+      const toast = $("#toast");
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3800);
+    }
+
+    function setLoading(loading, message = "") {
+      submitBtn.disabled = loading;
+      $("#clearBtn").disabled = loading;
+
+      if (loading) {
+        submitIcon.innerHTML = '<span class="loader"></span>';
+        submitText.textContent = message || "Procesando...";
+      } else {
+        submitIcon.textContent = "✓";
+        submitText.textContent = "Guardar auditoría y generar PDF";
+      }
+    }
+
+    function normalizeSearch(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase()
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    async function loadProductCatalog() {
+      if (productCatalog.length) return productCatalog;
+      if (productCatalogPromise) return productCatalogPromise;
+
+      productCatalogPromise = (async () => {
+        const snapshot = await getDocs(collection(catalogDb, "productos"));
+
+        productCatalog = snapshot.docs.map((productDoc) => {
+          const item = productDoc.data() || {};
+          const codigo = String(item.codigoBarra || item.codigo || productDoc.id || "").trim();
+          const descripcion = String(item.concepto || item.descripcion || item.nombre || "").trim();
+          const equivalentes = Array.isArray(item.codigosEquivalentes)
+            ? item.codigosEquivalentes.map((code) => String(code).trim()).filter(Boolean)
+            : [];
+
+          return {
+            id: productDoc.id,
+            codigo,
+            descripcion,
+            equivalentes,
+            searchText: normalizeSearch([codigo, descripcion, productDoc.id, ...equivalentes].join(" "))
+          };
+        }).filter((item) => item.codigo || item.descripcion);
+
+        return productCatalog;
+      })();
+
+      try {
+        return await productCatalogPromise;
+      } catch (error) {
+        productCatalogPromise = null;
+        console.error("Error al consultar el catálogo:", error);
+        throw error;
+      }
+    }
+
+    function searchProducts(term) {
+      const normalized = normalizeSearch(term);
+      if (!normalized) return [];
+
+      const words = normalized.split(" ").filter(Boolean);
+
+      return productCatalog
+        .filter((item) => words.every((word) => item.searchText.includes(word)))
+        .sort((a, b) => {
+          const aExact = normalizeSearch(a.codigo) === normalized ? 0 : 1;
+          const bExact = normalizeSearch(b.codigo) === normalized ? 0 : 1;
+          if (aExact !== bExact) return aExact - bExact;
+
+          const aStarts = normalizeSearch(a.descripcion).startsWith(normalized) ? 0 : 1;
+          const bStarts = normalizeSearch(b.descripcion).startsWith(normalized) ? 0 : 1;
+          if (aStarts !== bStarts) return aStarts - bStarts;
+
+          return a.descripcion.localeCompare(b.descripcion, "es");
+        })
+        .slice(0, 20);
+    }
+
+    let selectedCatalogProduct = null;
+    let globalSearchTimer = null;
+
+    const productSearch = $("#productSearch");
+    const globalSuggestions = $("#globalProductSuggestions");
+    const selectedProductQty = $("#selectedProductQty");
+    const selectedProductNote = $("#selectedProductNote");
+    const confirmAddProduct = $("#confirmAddProduct");
+    const selectedProductCard = $("#selectedProductCard");
+
+    function renderGlobalSuggestions(items, message = "") {
+      globalSuggestions.innerHTML = "";
+
+      if (message) {
+        globalSuggestions.innerHTML = `<div class="suggestion-empty">${escapeHtml(message)}</div>`;
+        globalSuggestions.classList.add("show");
+        return;
+      }
+
+      if (!items.length) {
+        globalSuggestions.innerHTML = '<div class="suggestion-empty">No se encontraron productos.</div>';
+        globalSuggestions.classList.add("show");
+        return;
+      }
+
+      items.forEach((item) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "suggestion-item";
+        const equivalentsText = item.equivalentes?.length
+          ? `<span class="suggestion-equivalents">Equiv.: ${escapeHtml(item.equivalentes.slice(0, 4).join(", "))}</span>`
+          : "";
+        button.innerHTML = `
+          <span class="suggestion-code">${escapeHtml(item.codigo || item.id)}</span>
+          <span class="suggestion-name">${escapeHtml(item.descripcion || "Sin descripción")}</span>
+          ${equivalentsText}
+        `;
+
+        button.addEventListener("click", () => selectCatalogProduct(item));
+        globalSuggestions.appendChild(button);
+      });
+
+      globalSuggestions.classList.add("show");
+    }
+
+    function selectCatalogProduct(item) {
+      selectedCatalogProduct = item;
+      productSearch.value = `${item.codigo || item.id} — ${item.descripcion}`;
+      $("#selectedProductCode").textContent = item.codigo || item.id;
+      $("#selectedProductDescription").textContent = item.descripcion || "Sin descripción";
+      selectedProductCard.hidden = false;
+      selectedProductQty.disabled = false;
+      selectedProductNote.disabled = false;
+      confirmAddProduct.disabled = false;
+      globalSuggestions.classList.remove("show");
+      selectedProductQty.focus();
+    }
+
+    function clearSelectedProduct({ keepSearchFocus = false } = {}) {
+      selectedCatalogProduct = null;
+      productSearch.value = "";
+      selectedProductQty.value = "";
+      selectedProductNote.value = "";
+      selectedProductQty.disabled = true;
+      selectedProductNote.disabled = true;
+      confirmAddProduct.disabled = true;
+      selectedProductCard.hidden = true;
+      globalSuggestions.classList.remove("show");
+      if (keepSearchFocus) productSearch.focus();
+    }
+
+    async function runGlobalProductSearch() {
+      const term = productSearch.value.trim();
+      clearTimeout(globalSearchTimer);
+
+      if (selectedCatalogProduct) {
+        selectedCatalogProduct = null;
+        selectedProductCard.hidden = true;
+        selectedProductQty.disabled = true;
+        selectedProductNote.disabled = true;
+        confirmAddProduct.disabled = true;
+      }
+
+      if (term.length < 2) {
+        globalSuggestions.classList.remove("show");
+        return;
+      }
+
+      globalSearchTimer = setTimeout(async () => {
+        try {
+          if (!productCatalog.length) {
+            renderGlobalSuggestions([], "Cargando catálogo de productos...");
+            await loadProductCatalog();
+          }
+          renderGlobalSuggestions(searchProducts(term));
+        } catch (error) {
+          renderGlobalSuggestions([], "No se pudo consultar el catálogo. Revisa las reglas de Firestore.");
+        }
+      }, 250);
+    }
+
+    function addSelectedProduct() {
+      if (!selectedCatalogProduct) {
+        showToast("Selecciona primero un producto del buscador.", "error");
+        productSearch.focus();
+        return;
+      }
+
+      const quantityText = selectedProductQty.value.trim();
+      const quantity = Number(quantityText);
+      if (quantityText === "" || !Number.isFinite(quantity) || quantity < 0) {
+        showToast("Captura una cantidad física válida.", "error");
+        selectedProductQty.focus();
+        return;
+      }
+
+      const duplicate = [...productsBody.querySelectorAll("tr")].find(
+        row => row.dataset.productId === selectedCatalogProduct.id
+      );
+      if (duplicate) {
+        showToast("Este producto ya fue agregado. Puedes borrarlo con la X y capturarlo nuevamente.", "error");
+        return;
+      }
+
+      addProductRow({
+        productoId: selectedCatalogProduct.id,
+        codigo: selectedCatalogProduct.codigo || selectedCatalogProduct.id,
+        descripcion: selectedCatalogProduct.descripcion,
+        cantidad: quantity,
+        observacion: selectedProductNote.value.trim()
+      });
+      clearSelectedProduct({ keepSearchFocus: true });
+      showToast("Producto agregado.", "success");
+    }
+
+    function addProductRow(product) {
+      const tr = document.createElement("tr");
+      tr.dataset.productId = product.productoId || "";
+      tr.dataset.codigo = product.codigo || "";
+      tr.dataset.descripcion = product.descripcion || "";
+      tr.dataset.cantidad = String(product.cantidad ?? 0);
+      tr.dataset.observacion = product.observacion || "";
+      tr.innerHTML = `
+        <td class="product-row-code">${escapeHtml(product.codigo || "—")}</td>
+        <td class="product-row-description">${escapeHtml(product.descripcion || "Sin descripción")}</td>
+        <td class="product-row-qty">${Number(product.cantidad || 0).toLocaleString("es-MX", { maximumFractionDigits: 2 })}</td>
+        <td>${escapeHtml(product.observacion || "—")}</td>
+        <td><button class="icon-btn remove-product" type="button" title="Quitar producto">×</button></td>
+      `;
+
+      tr.querySelector(".remove-product").addEventListener("click", () => {
+        tr.remove();
+        updateProductCount();
+        updateProgress();
+      });
+
+      productsBody.appendChild(tr);
+      updateProductCount();
+      updateProgress();
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function getProducts() {
+      return [...productsBody.querySelectorAll("tr")].map((row) => ({
+        productoId: row.dataset.productId || "",
+        codigo: row.dataset.codigo || "",
+        descripcion: row.dataset.descripcion || "",
+        cantidad: Number(row.dataset.cantidad || 0),
+        observacion: row.dataset.observacion || ""
+      }));
+    }
+
+    function updateProductCount() {
+      const count = getProducts().length;
+      $("#productCount").textContent =
+        `${count} ${count === 1 ? "producto capturado" : "productos capturados"}`;
+      $("#emptyProducts").style.display = count ? "none" : "block";
+    }
+
+    productSearch.addEventListener("input", runGlobalProductSearch);
+    productSearch.addEventListener("focus", () => {
+      if (!selectedCatalogProduct && productSearch.value.trim().length >= 2) runGlobalProductSearch();
+    });
+    selectedProductQty.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        addSelectedProduct();
+      }
+    });
+    confirmAddProduct.addEventListener("click", addSelectedProduct);
+    $("#cancelSelectedProduct").addEventListener("click", () => clearSelectedProduct({ keepSearchFocus: true }));
+
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest(".product-main-search")) globalSuggestions.classList.remove("show");
+    });
+
+    updateProductCount();
+
+    photosInput.addEventListener("change", async (event) => {
+      const files = [...event.target.files];
+
+      if (!files.length) return;
+
+      const available = 10 - selectedPhotos.length;
+      if (available <= 0) {
+        showToast("Solo se permiten hasta 10 fotografías.", "error");
+        photosInput.value = "";
+        return;
+      }
+
+      const filesToAdd = files.slice(0, available);
+
+      try {
+        showToast("Preparando fotografías...", "info");
+
+        for (const file of filesToAdd) {
+          if (!file.type.startsWith("image/")) continue;
+
+          const compressed = await compressImage(file, 1600, 0.78);
+          selectedPhotos.push({
+            id: crypto.randomUUID(),
+            originalName: file.name || `foto_${selectedPhotos.length + 1}.jpg`,
+            blob: compressed.blob,
+            dataUrl: compressed.dataUrl
+          });
+        }
+
+        renderPhotoPreview();
+        updateProgress();
+
+        if (files.length > available) {
+          showToast("Se agregaron solo las fotografías permitidas hasta completar 10.", "info");
+        }
+      } catch (error) {
+        console.error(error);
+        showToast("No se pudieron preparar algunas fotografías.", "error");
+      } finally {
+        photosInput.value = "";
+      }
+    });
+
+    function compressImage(file, maxDimension = 1600, quality = 0.78) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onerror = reject;
+        reader.onload = () => {
+          const image = new Image();
+
+          image.onerror = reject;
+          image.onload = () => {
+            let width = image.width;
+            let height = image.height;
+
+            if (width > maxDimension || height > maxDimension) {
+              const ratio = Math.min(maxDimension / width, maxDimension / height);
+              width = Math.round(width * ratio);
+              height = Math.round(height * ratio);
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+
+            const context = canvas.getContext("2d");
+            context.drawImage(image, 0, 0, width, height);
+
+            const dataUrl = canvas.toDataURL("image/jpeg", quality);
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  reject(new Error("No fue posible comprimir la imagen."));
+                  return;
+                }
+                resolve({ blob, dataUrl });
+              },
+              "image/jpeg",
+              quality
+            );
+          };
+
+          image.src = reader.result;
+        };
+
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderPhotoPreview() {
+      photoPreview.innerHTML = "";
+
+      selectedPhotos.forEach((photo, index) => {
+        const item = document.createElement("div");
+        item.className = "photo-item";
+        item.innerHTML = `
+          <img src="${photo.dataUrl}" alt="Evidencia ${index + 1}">
+          <button type="button" title="Eliminar fotografía">×</button>
+        `;
+
+        item.querySelector("button").addEventListener("click", () => {
+          selectedPhotos = selectedPhotos.filter((itemPhoto) => itemPhoto.id !== photo.id);
+          renderPhotoPreview();
+          updateProgress();
+        });
+
+        photoPreview.appendChild(item);
+      });
+
+      $("#photoCounter").textContent =
+        `${selectedPhotos.length} ${selectedPhotos.length === 1 ? "fotografía seleccionada" : "fotografías seleccionadas"}`;
+
+      $("#photoCounter").style.color =
+        selectedPhotos.length >= 3 ? "#15803d" : "#b45309";
+    }
+
+    function resizeSignatureCanvas() {
+      const rect = signatureCanvas.getBoundingClientRect();
+      if (!rect.width) return;
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      const previous = signatureDataUrl;
+      signatureCanvas.width = Math.round(rect.width * ratio);
+      signatureCanvas.height = Math.round(230 * ratio);
+      signatureContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+      signatureContext.lineWidth = 2.4;
+      signatureContext.lineCap = "round";
+      signatureContext.lineJoin = "round";
+      signatureContext.strokeStyle = "#111827";
+      signatureContext.fillStyle = "#ffffff";
+      signatureContext.fillRect(0, 0, rect.width, 230);
+
+      if (previous) {
+        const image = new Image();
+        image.onload = () => signatureContext.drawImage(image, 0, 0, rect.width, 230);
+        image.src = previous;
+      }
+    }
+
+    function openSignatureModal() {
+      $("#signatureName").value = signatureName || $("#encargado").value.trim();
+      signatureModal.classList.add("show");
+      document.body.style.overflow = "hidden";
+      requestAnimationFrame(() => requestAnimationFrame(resizeSignatureCanvas));
+    }
+
+    function closeSignatureModal() {
+      signatureModal.classList.remove("show");
+      document.body.style.overflow = "";
+    }
+
+    function clearSignatureCanvas() {
+      const rect = signatureCanvas.getBoundingClientRect();
+      signatureContext.clearRect(0, 0, rect.width, 230);
+      signatureContext.fillStyle = "#ffffff";
+      signatureContext.fillRect(0, 0, rect.width, 230);
+      signatureHasInk = false;
+      signatureDataUrl = "";
+    }
+
+    function canvasPoint(event) {
+      const rect = signatureCanvas.getBoundingClientRect();
+      return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    }
+
+    let signing = false;
+    signatureCanvas.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      signing = true;
+      signatureCanvas.setPointerCapture(event.pointerId);
+      const point = canvasPoint(event);
+      signatureContext.beginPath();
+      signatureContext.moveTo(point.x, point.y);
+    });
+
+    signatureCanvas.addEventListener("pointermove", (event) => {
+      if (!signing) return;
+      event.preventDefault();
+      const point = canvasPoint(event);
+      signatureContext.lineTo(point.x, point.y);
+      signatureContext.stroke();
+      signatureHasInk = true;
+    });
+
+    ["pointerup", "pointercancel", "pointerleave"].forEach((eventName) => {
+      signatureCanvas.addEventListener(eventName, () => { signing = false; });
+    });
+
+    $("#confirmacion").addEventListener("change", () => {
+      if ($("#confirmacion").checked) {
+        openSignatureModal();
+      } else {
+        signatureDataUrl = "";
+        signatureName = "";
+        signatureHasInk = false;
+        $("#signatureSummary").classList.remove("show");
+      }
+      updateProgress();
+    });
+
+    $("#editSignatureBtn").addEventListener("click", openSignatureModal);
+    $("#clearSignatureBtn").addEventListener("click", clearSignatureCanvas);
+
+    $("#cancelSignatureBtn").addEventListener("click", () => {
+      closeSignatureModal();
+      if (!signatureDataUrl) {
+        $("#confirmacion").checked = false;
+        $("#signatureSummary").classList.remove("show");
+      }
+      updateProgress();
+    });
+
+    $("#saveSignatureBtn").addEventListener("click", () => {
+      const name = $("#signatureName").value.trim();
+      if (!name) {
+        showToast("Escribe el nombre de quien firma.", "error");
+        $("#signatureName").focus();
+        return;
+      }
+      if (!signatureHasInk && !signatureDataUrl) {
+        showToast("Dibuja la firma dentro del recuadro.", "error");
+        return;
+      }
+
+      signatureName = name;
+      signatureDataUrl = signatureCanvas.toDataURL("image/png");
+      $("#signatureSummaryName").textContent = signatureName;
+      $("#signatureSummary").classList.add("show");
+      $("#confirmacion").checked = true;
+      closeSignatureModal();
+      updateProgress();
+      showToast("Firma capturada correctamente.", "success");
+    });
+
+    window.addEventListener("resize", () => {
+      if (signatureModal.classList.contains("show")) resizeSignatureCanvas();
+    });
+
+    function validateForm() {
+      const requiredFields = [
+        { element: $("#sucursal"), label: "Sucursal" },
+        { element: $("#encargado"), label: "Nombre del encargado" },
+        { element: $("#auditor"), label: "Persona que realiza la auditoría" },
+        { element: $("#fecha"), label: "Fecha" },
+        { element: $("#comentarioGeneral"), label: "Comentario general" }
+      ];
+
+      for (const field of requiredFields) {
+        if (!field.element.value.trim()) {
+          field.element.focus();
+          showToast(`Falta completar: ${field.label}.`, "error");
+          return false;
+        }
+      }
+
+      const products = getProducts();
+      if (!products.length) {
+        showToast("Agrega por lo menos un producto a inventariar.", "error");
+        productSearch.focus();
+        return false;
+      }
+
+      if (selectedPhotos.length < 3) {
+        showToast("Debes agregar mínimo 3 fotografías.", "error");
+        photosInput.focus();
+        return false;
+      }
+
+      if (!$("#confirmacion").checked) {
+        showToast("Confirma que la información corresponde a la auditoría realizada.", "error");
+        $("#confirmacion").focus();
+        return false;
+      }
+
+      if (!signatureDataUrl || !signatureName) {
+        showToast("Falta capturar la firma de conformidad.", "error");
+        openSignatureModal();
+        return false;
+      }
+
+      return true;
+    }
+
+    function getFormData(folio) {
+      return {
+        folio,
+        sucursal: $("#sucursal").value.trim().toUpperCase(),
+        encargado: $("#encargado").value.trim(),
+        auditor: $("#auditor").value.trim(),
+        fecha: $("#fecha").value,
+        fechaTexto: formatDateMx($("#fecha").value),
+        horaInicio: $("#horaInicio").value || "",
+        productos: getProducts(),
+        revision: {
+          limpiezaGondolas: $("#limpiezaGondolas").value.trim(),
+          limpiezaBano: $("#limpiezaBano").value.trim(),
+          estadoProductos: $("#estadoProductos").value.trim(),
+          rotacionProductos: $("#rotacionProductos").value.trim(),
+          caducidades: $("#caducidades").value.trim(),
+          mantenimiento: $("#mantenimiento").value.trim()
+        },
+        comentarioGeneral: $("#comentarioGeneral").value.trim(),
+        firma: {
+          nombre: signatureName,
+          capturada: Boolean(signatureDataUrl)
+        },
+        totalProductos: getProducts().length,
+        totalFotos: selectedPhotos.length,
+        estado: "COMPLETADA",
+        creadoEn: serverTimestamp(),
+        actualizadoEn: serverTimestamp(),
+        dispositivo: navigator.userAgent,
+        versionApp: "1.1.0-sin-storage"
+      };
+    }
+
+    function getImageFormat(dataUrl) {
+      if (dataUrl.startsWith("data:image/png")) return "PNG";
+      return "JPEG";
+    }
+
+    async function generatePdf(data) {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "letter",
+        compress: true
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 14;
+
+      function addHeader() {
+        pdf.setFillColor(153, 27, 27);
+        pdf.rect(0, 0, pageWidth, 29, "F");
+
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(16);
+        pdf.text("PROVSOFT", margin, 12);
+
+        pdf.setFontSize(11);
+        pdf.text("REPORTE DE AUDITORÍA DE SUCURSAL", margin, 20);
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.text(data.folio, pageWidth - margin, 12, { align: "right" });
+        pdf.text(`Fecha: ${data.fechaTexto}`, pageWidth - margin, 19, { align: "right" });
+      }
+
+      function addFooter(pageNumber) {
+        pdf.setDrawColor(220, 220, 220);
+        pdf.line(margin, pageHeight - 11, pageWidth - margin, pageHeight - 11);
+        pdf.setTextColor(110, 110, 110);
+        pdf.setFontSize(7.5);
+        pdf.text(
+          `La Proveedora · Auditoría operativa · Página ${pageNumber}`,
+          pageWidth / 2,
+          pageHeight - 6,
+          { align: "center" }
+        );
+      }
+
+      function addPageIfNeeded(y, requiredHeight = 25) {
+        if (y + requiredHeight > pageHeight - 17) {
+          addFooter(pdf.getNumberOfPages());
+          pdf.addPage();
+          addHeader();
+          return 38;
+        }
+        return y;
+      }
+
+      function addSectionTitle(title, y) {
+        y = addPageIfNeeded(y, 14);
+        pdf.setFillColor(254, 242, 242);
+        pdf.roundedRect(margin, y - 5, pageWidth - margin * 2, 10, 2, 2, "F");
+        pdf.setTextColor(127, 29, 29);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        pdf.text(title, margin + 3, y + 1.5);
+        return y + 10;
+      }
+
+      function addParagraph(label, value, y) {
+        y = addPageIfNeeded(y, 18);
+        const safeValue = value || "Sin observaciones.";
+        pdf.setTextColor(40, 40, 40);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(8.8);
+        pdf.text(label, margin, y);
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(70, 70, 70);
+        const lines = pdf.splitTextToSize(safeValue, pageWidth - margin * 2);
+        pdf.text(lines, margin, y + 5);
+        return y + 7 + lines.length * 4;
+      }
+
+      addHeader();
+
+      pdf.setTextColor(35, 35, 35);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.text("Sucursal:", margin, 39);
+      pdf.text("Encargado:", margin, 46);
+      pdf.text("Auditor:", margin, 53);
+      pdf.text("Hora de inicio:", margin, 60);
+
+      pdf.setFont("helvetica", "normal");
+      pdf.text(data.sucursal, margin + 25, 39);
+      pdf.text(data.encargado, margin + 25, 46);
+      pdf.text(data.auditor, margin + 25, 53);
+      pdf.text(data.horaInicio || "No registrada", margin + 25, 60);
+
+      let y = 70;
+
+      y = addSectionTitle("1. PRODUCTOS INVENTARIADOS", y);
+
+      pdf.autoTable({
+        startY: y,
+        margin: { left: margin, right: margin },
+        head: [["Código", "Descripción", "Cantidad", "Observación"]],
+        body: data.productos.map((product) => [
+          product.codigo || "—",
+          product.descripcion,
+          Number(product.cantidad).toLocaleString("es-MX", { maximumFractionDigits: 2 }),
+          product.observacion || ""
+        ]),
+        theme: "grid",
+        styles: {
+          font: "helvetica",
+          fontSize: 7.5,
+          cellPadding: 2.2,
+          lineColor: [225, 225, 225],
+          lineWidth: 0.15,
+          valign: "middle"
+        },
+        headStyles: {
+          fillColor: [153, 27, 27],
+          textColor: 255,
+          fontStyle: "bold"
+        },
+        alternateRowStyles: {
+          fillColor: [250, 250, 250]
+        },
+        columnStyles: {
+          0: { cellWidth: 31 },
+          1: { cellWidth: 70 },
+          2: { cellWidth: 24, halign: "right" },
+          3: { cellWidth: "auto" }
+        },
+        didDrawPage: () => {
+          if (pdf.getCurrentPageInfo().pageNumber > 1) addHeader();
+        }
+      });
+
+      y = pdf.lastAutoTable.finalY + 10;
+
+      y = addSectionTitle("2. REVISIÓN DE LIMPIEZA Y OPERACIÓN", y);
+      y = addParagraph("Limpieza de góndolas", data.revision.limpiezaGondolas, y);
+      y = addParagraph("Limpieza de baño", data.revision.limpiezaBano, y);
+      y = addParagraph("Estado y acomodo de productos", data.revision.estadoProductos, y);
+      y = addParagraph("Rotación de producto", data.revision.rotacionProductos, y);
+      y = addParagraph("Caducidades", data.revision.caducidades, y);
+      y = addParagraph("Mantenimiento y equipo", data.revision.mantenimiento, y);
+
+      y = addSectionTitle("3. COMENTARIO GENERAL, NECESIDADES O QUEJAS", y);
+      y = addParagraph("Comentario general", data.comentarioGeneral, y);
+
+      y = addSectionTitle("4. EVIDENCIA FOTOGRÁFICA", y);
+
+      const photoWidth = 82;
+      const photoHeight = 58;
+      const gap = 8;
+
+      for (let index = 0; index < selectedPhotos.length; index++) {
+        const column = index % 2;
+        const x = margin + column * (photoWidth + gap);
+
+        if (column === 0) {
+          y = addPageIfNeeded(y, photoHeight + 14);
+        }
+
+        const photo = selectedPhotos[index];
+
+        try {
+          pdf.addImage(
+            photo.dataUrl,
+            getImageFormat(photo.dataUrl),
+            x,
+            y,
+            photoWidth,
+            photoHeight,
+            undefined,
+            "FAST"
+          );
+
+          pdf.setDrawColor(220, 220, 220);
+          pdf.rect(x, y, photoWidth, photoHeight);
+          pdf.setTextColor(90, 90, 90);
+          pdf.setFontSize(7.5);
+          pdf.text(`Evidencia ${index + 1}`, x, y + photoHeight + 4);
+        } catch (error) {
+          console.warn("No se pudo agregar una imagen al PDF:", error);
+        }
+
+        if (column === 1 || index === selectedPhotos.length - 1) {
+          y += photoHeight + 11;
+        }
+      }
+
+      y = addPageIfNeeded(y, 52);
+      if (signatureDataUrl) {
+        try {
+          pdf.addImage(signatureDataUrl, "PNG", pageWidth / 2 - 38, y, 76, 28, undefined, "FAST");
+        } catch (error) {
+          console.warn("No se pudo agregar la firma al PDF:", error);
+        }
+      }
+      pdf.setDrawColor(130, 130, 130);
+      pdf.line(pageWidth / 2 - 43, y + 30, pageWidth / 2 + 43, y + 30);
+      pdf.setTextColor(55, 55, 55);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(8.5);
+      pdf.text(signatureName || data.encargado, pageWidth / 2, y + 35, { align: "center" });
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7.5);
+      pdf.text("Firma de conformidad", pageWidth / 2, y + 40, { align: "center" });
+
+      const totalPages = pdf.getNumberOfPages();
+      for (let page = 1; page <= totalPages; page++) {
+        pdf.setPage(page);
+        addFooter(page);
+      }
+
+      return pdf.output("blob");
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      if (!validateForm()) return;
+
+      const folio = $("#folioVisible").value || createFolio();
+      const auditRef = doc(collection(db, "auditoria"));
+      const data = getFormData(folio);
+      const pdfFileName = `${sanitizeFileName(folio)}.pdf`;
+
+      try {
+        setLoading(true, "Generando PDF...");
+        const pdfBlob = await generatePdf(data);
+
+        setLoading(true, "Guardando auditoría en Firestore...");
+
+        await setDoc(auditRef, {
+          ...data,
+          id: auditRef.id,
+          fotos: {
+            cantidad: selectedPhotos.length,
+            guardadasEnFirebase: false,
+            incluidasEnPdf: true
+          },
+          firma: {
+            nombre: signatureName,
+            capturada: true,
+            guardadaEnFirebase: false,
+            incluidaEnPdf: true
+          },
+          pdf: {
+            nombre: pdfFileName,
+            guardadoEnFirebase: false,
+            generadoLocalmente: true
+          },
+          actualizadoEn: serverTimestamp()
+        });
+
+        lastPdfBlob = pdfBlob;
+        lastPdfFileName = pdfFileName;
+        lastPdfUrl = "";
+
+        resultBox.classList.add("show");
+        $("#resultText").textContent =
+          `Folio ${folio}. Se guardaron los datos de la auditoría en Firestore. El PDF contiene ${data.totalProductos} productos, ${selectedPhotos.length} fotografías y la firma. Descárgalo o compártelo antes de cerrar la página.`;
+
+        resultBox.scrollIntoView({ behavior: "smooth", block: "center" });
+        showToast("Auditoría guardada y PDF generado correctamente.", "success");
+
+        downloadBlob(lastPdfBlob, lastPdfFileName);
+      } catch (error) {
+        console.error("Error al guardar la auditoría:", error);
+
+        let message = "No fue posible guardar la auditoría.";
+
+        if (error?.code === "permission-denied") {
+          message = "Firestore rechazó la operación. Revisa y publica las reglas de la colección auditoria.";
+        } else if (error?.message) {
+          message += ` ${error.message}`;
+        }
+
+        showToast(message, "error");
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    function downloadBlob(blob, fileName) {
+      if (!blob) return;
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 3000);
+    }
+
+    downloadPdfBtn.addEventListener("click", () => {
+      if (!lastPdfBlob) {
+        showToast("Primero guarda una auditoría.", "error");
+        return;
+      }
+      downloadBlob(lastPdfBlob, lastPdfFileName);
+    });
+
+    sharePdfBtn.addEventListener("click", async () => {
+      if (!lastPdfBlob) {
+        showToast("Primero guarda una auditoría.", "error");
+        return;
+      }
+
+      const file = new File([lastPdfBlob], lastPdfFileName, {
+        type: "application/pdf"
+      });
+
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: "Auditoría de sucursal",
+            text: `Auditoría ${$("#folioVisible").value}`,
+            files: [file]
+          });
+        } catch (error) {
+          if (error?.name !== "AbortError") {
+            showToast("No fue posible abrir el menú para compartir.", "error");
+          }
+        }
+      } else {
+        downloadBlob(lastPdfBlob, lastPdfFileName);
+        showToast("Este navegador no permite compartir archivos directamente. El PDF se descargó para que puedas enviarlo manualmente.", "info");
+      }
+    });
+
+    $("#clearBtn").addEventListener("click", () => {
+      const accepted = confirm("¿Deseas limpiar todo el formulario?");
+      if (!accepted) return;
+
+      form.reset();
+      productsBody.innerHTML = "";
+      clearSelectedProduct();
+      selectedPhotos = [];
+      renderPhotoPreview();
+      updateProductCount();
+
+      const now = new Date();
+      $("#fecha").value = formatDateInput(now);
+      $("#horaInicio").value = now.toTimeString().slice(0, 5);
+      refreshFolio();
+
+      lastPdfBlob = null;
+      lastPdfFileName = "";
+      lastPdfUrl = "";
+      signatureDataUrl = "";
+      signatureName = "";
+      signatureHasInk = false;
+      $("#signatureSummary").classList.remove("show");
+      clearSignatureCanvas();
+      resultBox.classList.remove("show");
+
+      updateProgress();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    function updateProgress() {
+      const checks = [
+        Boolean($("#sucursal").value.trim()),
+        Boolean($("#encargado").value.trim()),
+        Boolean($("#auditor").value.trim()),
+        getProducts().length > 0,
+        Boolean(
+          $("#limpiezaGondolas").value.trim() ||
+          $("#limpiezaBano").value.trim() ||
+          $("#estadoProductos").value.trim() ||
+          $("#rotacionProductos").value.trim() ||
+          $("#caducidades").value.trim() ||
+          $("#mantenimiento").value.trim()
+        ),
+        Boolean($("#comentarioGeneral").value.trim()),
+        selectedPhotos.length >= 3,
+        $("#confirmacion").checked && Boolean(signatureDataUrl)
+      ];
+
+      const completed = checks.filter(Boolean).length;
+      const percent = Math.round((completed / checks.length) * 100);
+
+      $("#progressBar").style.width = `${percent}%`;
+
+      if (percent === 100) {
+        $("#progressText").textContent = "Formulario listo para guardar.";
+      } else if (percent >= 70) {
+        $("#progressText").textContent = "Casi listo. Revisa los datos faltantes.";
+      } else if (percent >= 35) {
+        $("#progressText").textContent = "Continúa con la revisión y evidencias.";
+      } else {
+        $("#progressText").textContent = "Completa los datos principales.";
+      }
+    }
+
+    form.querySelectorAll("input, textarea, select").forEach((field) => {
+      field.addEventListener("input", updateProgress);
+      field.addEventListener("change", updateProgress);
+    });
+
+    updateProgress();
+  </script>
+</body>
+</html>
