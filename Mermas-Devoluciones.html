@@ -347,25 +347,97 @@
     @page{size:letter landscape;margin:7mm}
 
     @media print{
-      html,body{background:#fff!important}
-      body *{visibility:hidden!important}
-      #hojaImpresion,#hojaImpresion *{visibility:visible!important}
-      #hojaImpresion{
-        position:absolute;
-        left:50%;
-        top:0;
-        transform:translateX(-50%);
+      @page{
+        size:letter landscape;
+        margin:7mm;
+      }
+
+      html,body{
+        margin:0!important;
+        padding:0!important;
         width:100%!important;
-        max-width:100%!important;
-        min-height:auto!important;
-        margin:0 auto!important;
+        height:auto!important;
+        min-height:0!important;
+        overflow:visible!important;
+        background:#fff!important;
+      }
+
+      body > .encabezado,
+      body > .contenedor{
+        display:none!important;
+      }
+
+      #modalFondo{
+        display:block!important;
+        position:static!important;
+        inset:auto!important;
+        width:100%!important;
+        height:auto!important;
+        min-height:0!important;
+        margin:0!important;
+        padding:0!important;
+        overflow:visible!important;
+        background:#fff!important;
+      }
+
+      #modalFondo .modal{
+        display:block!important;
+        width:100%!important;
+        max-width:none!important;
+        min-height:0!important;
+        margin:0!important;
+        padding:0!important;
+        border:0!important;
+        border-radius:0!important;
+        box-shadow:none!important;
+        overflow:visible!important;
+        background:#fff!important;
+      }
+
+      .modal-barra{
+        display:none!important;
+      }
+
+      #hojaImpresion{
+        display:block!important;
+        position:static!important;
+        left:auto!important;
+        top:auto!important;
+        transform:none!important;
+        width:100%!important;
+        max-width:none!important;
+        min-height:0!important;
+        height:auto!important;
+        margin:0!important;
         padding:0!important;
         border:0!important;
         box-shadow:none!important;
         overflow:visible!important;
+        background:#fff!important;
       }
-      .tabla-documento thead{display:table-header-group}
-      .tabla-documento tr,.dato,.nota{page-break-inside:avoid}
+
+      #hojaImpresion,
+      #hojaImpresion *{
+        visibility:visible!important;
+      }
+
+      .tabla-documento{
+        width:100%!important;
+        table-layout:fixed!important;
+      }
+
+      .tabla-documento thead{
+        display:table-header-group;
+      }
+
+      .tabla-documento tr,
+      .dato,
+      .nota,
+      .firma-contenedor,
+      .firmas{
+        page-break-inside:avoid!important;
+        break-inside:avoid!important;
+      }
     }
 
     @media(max-width:850px){
