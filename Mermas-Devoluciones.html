@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reimpresión de Mermas y Devoluciones</title>
+  <meta name="theme-color" content="#b91c1c" />
+
+  <style>
+    :root{
+      --rojo:#b91c1c;
+      --rojo-oscuro:#7f1d1d;
+      --rojo-claro:#fef2f2;
+      --azul:#1d4ed8;
+      --verde:#15803d;
+      --gris-50:#f8fafc;
+      --gris-100:#f1f5f9;
+      --gris-200:#e2e8f0;
+      --gris-400:#94a3b8;
+      --gris-600:#475569;
+      --gris-800:#1e293b;
+      --blanco:#fff;
+      --sombra:0 12px 30px rgba(15,23,42,.12);
+      --radio:16px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:Arial,Helvetica,sans-serif;
+      color:var(--gris-800);
+      background:linear-gradient(180deg,#fff 0,#f8fafc 35%,#eef2f7 100%);
+      min-height:100vh;
+    }
+
+    button,input,select{font:inherit}
+
+    .encabezado{
+      background:linear-gradient(135deg,var(--rojo-oscuro),var(--rojo));
+      color:#fff;
+      padding:18px 22px;
+      box-shadow:0 6px 20px rgba(127,29,29,.25);
+    }
+
+    .encabezado-interno{
+      max-width:1400px;
+      margin:auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+    }
+
+    .marca h1{margin:0;font-size:clamp(1.2rem,2.6vw,2rem)}
+    .marca p{margin:5px 0 0;opacity:.9;font-size:.92rem}
+    .estado{
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.25);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:.86rem;
+      white-space:nowrap;
+    }
+
+    .contenedor{max-width:1400px;margin:22px auto;padding:0 16px 40px}
+
+    .panel{
+      background:#fff;
+      border:1px solid var(--gris-200);
+      border-radius:var(--radio);
+      box-shadow:var(--sombra);
+      overflow:hidden;
+    }
+
+    .controles{
+      padding:18px;
+      display:grid;
+      grid-template-columns:minmax(190px,1fr) minmax(190px,1fr) minmax(220px,2fr) auto;
+      gap:12px;
+      align-items:end;
+    }
+
+    .campo label{
+      display:block;
+      font-weight:700;
+      font-size:.8rem;
+      margin:0 0 6px;
+      color:var(--gris-600);
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+
+    .campo select,.campo input{
+      width:100%;
+      min-height:44px;
+      border:1px solid var(--gris-200);
+      border-radius:10px;
+      padding:10px 12px;
+      outline:none;
+      background:#fff;
+    }
+
+    .campo select:focus,.campo input:focus{
+      border-color:var(--rojo);
+      box-shadow:0 0 0 3px rgba(185,28,28,.1);
+    }
+
+    .boton{
+      border:0;
+      border-radius:10px;
+      min-height:44px;
+      padding:10px 16px;
+      font-weight:700;
+      cursor:pointer;
+      transition:.18s ease;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+    }
+    .boton:hover{transform:translateY(-1px)}
+    .boton:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    .boton-principal{background:var(--rojo);color:#fff}
+    .boton-secundario{background:var(--gris-100);color:var(--gris-800)}
+    .boton-imprimir{background:var(--azul);color:#fff}
+    .boton-verde{background:var(--verde);color:#fff}
+
+    .pestanas{
+      display:flex;
+      border-top:1px solid var(--gris-200);
+      border-bottom:1px solid var(--gris-200);
+      background:var(--gris-50);
+    }
+    .pestana{
+      flex:1;
+      border:0;
+      background:transparent;
+      padding:14px;
+      font-weight:800;
+      color:var(--gris-600);
+      cursor:pointer;
+      border-bottom:3px solid transparent;
+    }
+    .pestana.activa{color:var(--rojo);background:#fff;border-bottom-color:var(--rojo)}
+
+    .resumen{
+      padding:14px 18px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      border-bottom:1px solid var(--gris-200);
+      font-size:.92rem;
+    }
+
+    .tabla-contenedor{overflow:auto;min-height:320px}
+    table{width:100%;border-collapse:collapse}
+    th,td{
+      padding:12px 14px;
+      border-bottom:1px solid var(--gris-200);
+      text-align:left;
+      vertical-align:top;
+      font-size:.9rem;
+    }
+    th{
+      position:sticky;
+      top:0;
+      background:var(--gris-100);
+      z-index:1;
+      color:var(--gris-600);
+      text-transform:uppercase;
+      font-size:.75rem;
+      letter-spacing:.04em;
+    }
+    tbody tr:hover{background:#fff7f7}
+
+    .etiqueta{
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:999px;
+      background:var(--rojo-claro);
+      color:var(--rojo-oscuro);
+      font-weight:700;
+      font-size:.75rem;
+    }
+
+    .vacio,.cargando,.error{
+      padding:70px 20px;
+      text-align:center;
+      color:var(--gris-600);
+    }
+    .error{color:var(--rojo)}
+    .oculto{display:none!important}
+
+    .modal-fondo{
+      position:fixed;
+      inset:0;
+      z-index:50;
+      background:rgba(15,23,42,.65);
+      padding:22px;
+      overflow:auto;
+    }
+    .modal{
+      width:min(100%,1000px);
+      margin:auto;
+      background:#fff;
+      border-radius:18px;
+      box-shadow:0 24px 70px rgba(0,0,0,.28);
+      overflow:hidden;
+    }
+    .modal-barra{
+      padding:14px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      border-bottom:1px solid var(--gris-200);
+      position:sticky;
+      top:0;
+      background:#fff;
+      z-index:3;
+    }
+    .modal-acciones{display:flex;gap:8px;flex-wrap:wrap}
+
+    .hoja{
+      width:279mm;
+      min-height:216mm;
+      max-width:calc(100vw - 40px);
+      margin:20px auto;
+      padding:10mm;
+      background:#fff;
+      color:#000;
+      border:1px solid #d1d5db;
+      box-shadow:0 10px 30px rgba(0,0,0,.12);
+      overflow:hidden;
+    }
+
+    .doc-cabecera{
+      border-bottom:2px solid #111;
+      padding-bottom:10px;
+      margin-bottom:14px;
+      display:flex;
+      justify-content:space-between;
+      gap:20px;
+      align-items:flex-start;
+    }
+    .doc-cabecera h2{margin:0 0 5px;font-size:20px}
+    .doc-cabecera p{margin:2px 0;font-size:12px}
+    .doc-folio{text-align:right;font-size:12px}
+
+    .datos-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px 18px;
+      margin:12px 0 18px;
+    }
+    .dato{
+      border-bottom:1px solid #bbb;
+      padding:5px 0;
+      font-size:12px;
+      word-break:break-word;
+    }
+    .dato b{display:block;font-size:10px;text-transform:uppercase;color:#555;margin-bottom:2px}
+
+    .seccion-titulo{
+      margin:18px 0 7px;
+      font-size:13px;
+      text-transform:uppercase;
+      border-bottom:1px solid #111;
+      padding-bottom:4px;
+    }
+
+    .tabla-documento{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+    }
+    .tabla-documento th,.tabla-documento td{
+      border:1px solid #777;
+      padding:4px 3px;
+      font-size:8px;
+      line-height:1.18;
+      position:static;
+      background:#fff;
+      text-transform:none;
+      letter-spacing:0;
+      color:#000;
+      white-space:normal;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+      vertical-align:top;
+    }
+    .tabla-documento th{
+      font-weight:700;
+      background:#eee;
+      text-align:center;
+    }
+    .tabla-documento td:nth-child(1){width:10%}
+    .tabla-documento td:nth-child(2){width:16%}
+
+    .firmas{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:35px;
+      margin-top:55px;
+      page-break-inside:avoid;
+    }
+    .firma{text-align:center;border-top:1px solid #111;padding-top:5px;font-size:11px}
+    .firma-contenedor{
+      margin-top:24px;
+      page-break-inside:avoid;
+      text-align:center;
+    }
+    .firma-contenedor h3{
+      margin:0 0 8px;
+      font-size:12px;
+      text-transform:uppercase;
+    }
+    .imagen-firma{
+      display:block;
+      max-width:320px;
+      max-height:135px;
+      width:auto;
+      height:auto;
+      object-fit:contain;
+      margin:0 auto 6px;
+      border-bottom:1px solid #111;
+    }
+    .imagen-documento{
+      display:block;
+      max-width:100%;
+      max-height:350px;
+      object-fit:contain;
+      margin:8px auto;
+    }
+
+    .nota{
+      margin:10px 0;
+      padding:9px;
+      border:1px solid #aaa;
+      font-size:11px;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+
+    @page{size:letter landscape;margin:7mm}
+
+    @media print{
+      html,body{background:#fff!important}
+      body *{visibility:hidden!important}
+      #hojaImpresion,#hojaImpresion *{visibility:visible!important}
+      #hojaImpresion{
+        position:absolute;
+        left:50%;
+        top:0;
+        transform:translateX(-50%);
+        width:100%!important;
+        max-width:100%!important;
+        min-height:auto!important;
+        margin:0 auto!important;
+        padding:0!important;
+        border:0!important;
+        box-shadow:none!important;
+        overflow:visible!important;
+      }
+      .tabla-documento thead{display:table-header-group}
+      .tabla-documento tr,.dato,.nota{page-break-inside:avoid}
+    }
+
+    @media(max-width:850px){
+      .controles{grid-template-columns:1fr 1fr}
+      .campo-busqueda{grid-column:1/-1}
+      .boton-cargar{grid-column:1/-1}
+      .encabezado-interno{align-items:flex-start;flex-direction:column}
+    }
+
+    @media(max-width:560px){
+      .controles{grid-template-columns:1fr}
+      .campo-busqueda,.boton-cargar{grid-column:auto}
+      .modal-fondo{padding:0}
+      .modal{border-radius:0;min-height:100vh}
+      .modal-barra{align-items:flex-start;flex-direction:column}
+      .hoja{margin:0;border:0;box-shadow:none;padding:12px}
+      .datos-grid{grid-template-columns:1fr}
+      .firmas{grid-template-columns:1fr;gap:45px}
+    }
+  </style>
+</head>
+
+<body>
+  <header class="encabezado no-imprimir">
+    <div class="encabezado-interno">
+      <div class="marca">
+        <h1>Reimpresión de Mermas y Devoluciones</h1>
+        <p>Consulta e impresión en hoja tamaño carta</p>
+      </div>
+      <div id="estadoConexion" class="estado">Conectando con Firebase…</div>
+    </div>
+  </header>
+
+  <main class="contenedor no-imprimir">
+    <section class="panel">
+      <div class="controles">
+        <div class="campo">
+          <label for="tienda">Tienda</label>
+          <select id="tienda"></select>
+        </div>
+
+        <div class="campo">
+          <label for="orden">Ordenar</label>
+          <select id="orden">
+            <option value="desc">Más recientes primero</option>
+            <option value="asc">Más antiguos primero</option>
+          </select>
+        </div>
+
+        <div class="campo campo-busqueda">
+          <label for="busqueda">Buscar en todos los campos</label>
+          <input id="busqueda" type="search" placeholder="Folio, fecha, usuario, producto, código…" />
+        </div>
+
+        <button id="btnCargar" class="boton boton-principal boton-cargar">Actualizar</button>
+      </div>
+
+      <div class="pestanas">
+        <button class="pestana activa" data-tipo="MERMAS">Mermas</button>
+        <button class="pestana" data-tipo="DEVOLUCIONES">Devoluciones</button>
+      </div>
+
+      <div class="resumen">
+        <span id="tituloListado">Mermas</span>
+        <strong id="contador">0 registros</strong>
+      </div>
+
+      <div class="tabla-contenedor">
+        <div id="cargando" class="cargando oculto">Cargando información…</div>
+        <div id="mensajeError" class="error oculto"></div>
+        <div id="mensajeVacio" class="vacio">Selecciona una tienda para consultar sus registros.</div>
+
+        <table id="tablaRegistros" class="oculto">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Folio / Documento</th>
+              <th>Responsable</th>
+              <th>Resumen</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpoTabla"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="modalFondo" class="modal-fondo oculto">
+    <section class="modal">
+      <div class="modal-barra no-imprimir">
+        <strong id="modalTitulo">Vista previa</strong>
+        <div class="modal-acciones">
+          <button id="btnImprimir" class="boton boton-imprimir">Imprimir / Guardar PDF</button>
+          <button id="btnCerrar" class="boton boton-secundario">Cerrar</button>
+        </div>
+      </div>
+      <article id="hojaImpresion" class="hoja"></article>
+    </section>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
+      authDomain: "inventariopv-643f1.firebaseapp.com",
+      projectId: "inventariopv-643f1",
+      storageBucket: "inventariopv-643f1.firebasestorage.app",
+      messagingSenderId: "96242533231",
+      appId: "1:96242533231:web:aae75a18fbaf9840529e9a"
+    };
+
+    /*
+      IMPORTANTE:
+      Firestore no permite descubrir desde el navegador documentos padre inexistentes
+      que únicamente conservan subcolecciones. Por eso se incluye esta lista de respaldo.
+      Puedes agregar o quitar tiendas aquí sin modificar el resto de la aplicación.
+    */
+    const TIENDAS_RESPALDO = [
+      "ALLENDE 1",
+      "ALLENDE 2",
+      "CENTRAL",
+      "MONTEMORELOS",
+      "OSITO",
+      "PROVILEON",
+      "RIO VERDE",
+      "RUTA1",
+      "RUTA2"
+    ];
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const estado = {
+      tipo: "MERMAS",
+      registros: [],
+      filtrados: [],
+      catalogo: new Map(),
+      catalogoCargado: false
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const tiendaSelect = $("tienda");
+    const busquedaInput = $("busqueda");
+    const ordenSelect = $("orden");
+    const cuerpoTabla = $("cuerpoTabla");
+    const tabla = $("tablaRegistros");
+    const cargando = $("cargando");
+    const mensajeVacio = $("mensajeVacio");
+    const mensajeError = $("mensajeError");
+    const contador = $("contador");
+    const tituloListado = $("tituloListado");
+    const estadoConexion = $("estadoConexion");
+    const modalFondo = $("modalFondo");
+    const hojaImpresion = $("hojaImpresion");
+
+    function escapar(valor) {
+      return String(valor ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function esTimestamp(valor) {
+      return valor && typeof valor === "object" && typeof valor.toDate === "function";
+    }
+
+    function convertirFecha(valor) {
+      if (valor == null || valor === "") return null;
+      if (esTimestamp(valor)) return valor.toDate();
+      if (valor instanceof Date) return valor;
+
+      if (typeof valor === "number") {
+        const ms = valor < 100000000000 ? valor * 1000 : valor;
+        const fecha = new Date(ms);
+        return isNaN(fecha) ? null : fecha;
+      }
+
+      if (typeof valor === "string") {
+        const texto = valor.trim();
+        if (!texto) return null;
+
+        const ddmmyyyy = texto.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+        if (ddmmyyyy) {
+          let [, d, m, y, h = "0", min = "0", s = "0"] = ddmmyyyy;
+          if (y.length === 2) y = "20" + y;
+          const fecha = new Date(+y, +m - 1, +d, +h, +min, +s);
+          return isNaN(fecha) ? null : fecha;
+        }
+
+        const fecha = new Date(texto);
+        return isNaN(fecha) ? null : fecha;
+      }
+
+      return null;
+    }
+
+    function encontrarCampo(obj, candidatos) {
+      if (!obj || typeof obj !== "object") return undefined;
+      const mapa = Object.keys(obj).reduce((acc, clave) => {
+        acc[normalizar(clave)] = clave;
+        return acc;
+      }, {});
+
+      for (const candidato of candidatos) {
+        const real = mapa[normalizar(candidato)];
+        if (real !== undefined) return obj[real];
+      }
+      return undefined;
+    }
+
+    function normalizar(texto) {
+      return String(texto ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+    }
+
+    function buscarCampoRecursivo(obj, candidatos, profundidad = 0) {
+      if (!obj || typeof obj !== "object" || profundidad > 4) return undefined;
+
+      const directo = encontrarCampo(obj, candidatos);
+      if (directo !== undefined && directo !== null && directo !== "") return directo;
+
+      for (const valor of Object.values(obj)) {
+        if (valor && typeof valor === "object" && !esTimestamp(valor)) {
+          const encontrado = buscarCampoRecursivo(valor, candidatos, profundidad + 1);
+          if (encontrado !== undefined && encontrado !== null && encontrado !== "") return encontrado;
+        }
+      }
+      return undefined;
+    }
+
+    function fechaPrincipal(datos, id) {
+      const valor = buscarCampoRecursivo(datos, [
+        "fecha", "fecha_hora", "fechaHora", "createdAt", "creado", "timestamp",
+        "fechaRegistro", "fecha_registro", "fechaMovimiento", "fecha_movimiento",
+        "fechaCaptura", "fecha_captura", "hora", "date"
+      ]);
+      return convertirFecha(valor) || convertirFecha(id);
+    }
+
+    function formatoFecha(fecha) {
+      if (!fecha) return "Sin fecha";
+      return new Intl.DateTimeFormat("es-MX", {
+        dateStyle: "medium",
+        timeStyle: "short"
+      }).format(fecha);
+    }
+
+    function valorLegible(valor) {
+      if (valor == null) return "";
+      if (esTimestamp(valor)) return formatoFecha(valor.toDate());
+      if (valor instanceof Date) return formatoFecha(valor);
+      if (typeof valor === "boolean") return valor ? "Sí" : "No";
+      if (typeof valor === "number") return new Intl.NumberFormat("es-MX", {
+        maximumFractionDigits: 2
+      }).format(valor);
+      if (typeof valor === "string") return valor;
+      if (Array.isArray(valor)) return valor.map(valorLegible).join(" | ");
+      if (typeof valor === "object") {
+        try { return JSON.stringify(valor); } catch { return String(valor); }
+      }
+      return String(valor);
+    }
+
+
+    function esImagen(valor) {
+      if (typeof valor !== "string") return false;
+      const v = valor.trim();
+      return /^data:image\//i.test(v) ||
+             /^https?:\/\/.+\.(png|jpe?g|webp|gif)(\?.*)?$/i.test(v) ||
+             /^https?:\/\/firebasestorage\.googleapis\.com\//i.test(v) ||
+             /^https?:\/\/storage\.googleapis\.com\//i.test(v);
+    }
+
+    function htmlValor(valor, clase = "") {
+      if (esImagen(valor)) {
+        return `<img class="${clase || "imagen-documento"}" src="${escapar(valor)}" alt="Imagen del registro">`;
+      }
+      return escapar(valorLegible(valor));
+    }
+
+    function codigoProducto(item) {
+      if (item == null) return "";
+      if (typeof item === "string" || typeof item === "number") return String(item).trim();
+      return String(encontrarCampo(item, [
+        "codigo", "código", "code", "barcode", "codigo_barras", "codigobarras",
+        "clave", "sku", "id", "producto_id"
+      ]) ?? "").trim();
+    }
+
+    function descripcionProducto(item) {
+      if (!item || typeof item !== "object") return "";
+      return String(encontrarCampo(item, [
+        "descripcion", "descripción", "concepto", "nombre", "producto",
+        "articulo", "artículo", "detalle"
+      ]) ?? "").trim();
+    }
+
+    function descripcionCatalogo(codigo) {
+      if (!codigo) return "";
+      return estado.catalogo.get(normalizar(codigo)) || "";
+    }
+
+    async function cargarCatalogoProductos() {
+      if (estado.catalogoCargado) return;
+      estado.catalogoCargado = true;
+
+      const rutas = ["productos", "PRODUCTOS"];
+      for (const ruta of rutas) {
+        try {
+          const snapshot = await getDocs(collection(db, ruta));
+          snapshot.forEach(docu => {
+            const datos = docu.data();
+            const codigo = codigoProducto({ ...datos, id: docu.id }) || docu.id;
+            const descripcion = descripcionProducto(datos);
+            if (codigo && descripcion) estado.catalogo.set(normalizar(codigo), descripcion);
+          });
+          if (!snapshot.empty) break;
+        } catch (error) {
+          console.warn(`No se pudo leer el catálogo ${ruta}:`, error);
+        }
+      }
+    }
+
+    function buscarFirma(datos) {
+      const candidatos = [
+        "firma", "firmaBase64", "firma_base64", "firmaUrl", "firma_url",
+        "firmaEncargado", "firma_encargado", "firmaResponsable",
+        "firma_responsable", "signature", "firmaCliente", "firma_cliente"
+      ];
+
+      const valor = buscarCampoRecursivo(datos, candidatos);
+      if (esImagen(valor)) return valor;
+
+      function recorrer(obj, profundidad = 0) {
+        if (!obj || typeof obj !== "object" || profundidad > 5) return "";
+        for (const [clave, val] of Object.entries(obj)) {
+          if (normalizar(clave).includes("firma") && esImagen(val)) return val;
+          if (val && typeof val === "object") {
+            const r = recorrer(val, profundidad + 1);
+            if (r) return r;
+          }
+        }
+        return "";
+      }
+      return recorrer(datos);
+    }
+
+    function textoBusqueda(registro) {
+      function aTexto(valor) {
+        if (valor == null) return "";
+        if (esTimestamp(valor)) return valor.toDate().toISOString();
+        if (Array.isArray(valor)) return valor.map(aTexto).join(" ");
+        if (typeof valor === "object") return Object.entries(valor)
+          .map(([k,v]) => `${k} ${aTexto(v)}`).join(" ");
+        return String(valor);
+      }
+      return normalizar(`${registro.id} ${aTexto(registro.datos)}`);
+    }
+
+    function obtenerResponsable(datos) {
+      return valorLegible(encontrarCampo(datos, [
+        "usuario", "responsable", "empleado", "encargado", "realizo",
+        "elaboro", "nombre", "vendedor", "capturo", "autorizado_por"
+      ])) || "No indicado";
+    }
+
+    function obtenerFolio(registro) {
+      return valorLegible(encontrarCampo(registro.datos, [
+        "folio", "consecutivo", "numero", "no_folio", "id", "ticket"
+      ])) || registro.id;
+    }
+
+    function obtenerResumen(datos) {
+      const arreglo = Object.values(datos).find(v => Array.isArray(v) && v.length);
+      if (arreglo) {
+        const cantidad = arreglo.length;
+        const primer = arreglo[0];
+        if (primer && typeof primer === "object") {
+          const descripcion = encontrarCampo(primer, [
+            "descripcion", "concepto", "nombre", "producto", "articulo"
+          ]);
+          return `${cantidad} partida${cantidad === 1 ? "" : "s"}${descripcion ? ` · ${valorLegible(descripcion)}` : ""}`;
+        }
+        return `${cantidad} elemento${cantidad === 1 ? "" : "s"}`;
+      }
+
+      const motivo = encontrarCampo(datos, ["motivo", "observaciones", "comentarios", "nota"]);
+      return motivo ? valorLegible(motivo).slice(0, 100) : "Ver información completa";
+    }
+
+    async function cargarTiendas() {
+      estadoConexion.textContent = "Conectando con Firebase…";
+      let tiendas = [];
+
+      try {
+        const snapshot = await getDocs(collection(db, "TIENDAS"));
+        tiendas = snapshot.docs.map(d => d.id);
+        estadoConexion.textContent = "Firebase conectado";
+      } catch (error) {
+        console.error(error);
+        estadoConexion.textContent = "Conexión limitada";
+      }
+
+      tiendas = [...new Set([...tiendas, ...TIENDAS_RESPALDO])]
+        .filter(nombre => normalizar(nombre) !== "config")
+        .sort((a,b) => a.localeCompare(b, "es", {numeric:true}));
+
+      tiendaSelect.innerHTML = tiendas.map(nombre =>
+        `<option value="${escapar(nombre)}">${escapar(nombre)}</option>`
+      ).join("");
+
+      if (tiendas.length) await cargarRegistros();
+    }
+
+    async function cargarRegistros() {
+      const tienda = tiendaSelect.value;
+      if (!tienda) return;
+
+      mostrarEstado("cargando");
+      $("btnCargar").disabled = true;
+
+      try {
+        const referencia = collection(db, "TIENDAS", tienda, estado.tipo);
+        const snapshot = await getDocs(referencia);
+
+        estado.registros = snapshot.docs.map(documento => {
+          const datos = documento.data();
+          return {
+            id: documento.id,
+            datos,
+            fecha: fechaPrincipal(datos, documento.id)
+          };
+        });
+
+        aplicarFiltros();
+        estadoConexion.textContent = "Firebase conectado";
+      } catch (error) {
+        console.error(error);
+        estado.registros = [];
+        mensajeError.innerHTML =
+          `<strong>No se pudo leer TIENDAS/${escapar(tienda)}/${escapar(estado.tipo)}.</strong><br>` +
+          `${escapar(error.message || error)}<br><br>` +
+          `Revisa las reglas de Firestore y confirma que el nombre de la colección sea exactamente <b>${escapar(estado.tipo)}</b>.`;
+        mostrarEstado("error");
+        contador.textContent = "0 registros";
+      } finally {
+        $("btnCargar").disabled = false;
+      }
+    }
+
+    function aplicarFiltros() {
+      const termino = normalizar(busquedaInput.value);
+      estado.filtrados = estado.registros.filter(registro =>
+        !termino || textoBusqueda(registro).includes(termino)
+      );
+
+      estado.filtrados.sort((a,b) => {
+        const fa = a.fecha?.getTime() || 0;
+        const fb = b.fecha?.getTime() || 0;
+        return ordenSelect.value === "desc" ? fb - fa : fa - fb;
+      });
+
+      renderizarTabla();
+    }
+
+    function mostrarEstado(tipo) {
+      cargando.classList.toggle("oculto", tipo !== "cargando");
+      mensajeError.classList.toggle("oculto", tipo !== "error");
+      mensajeVacio.classList.toggle("oculto", tipo !== "vacio");
+      tabla.classList.toggle("oculto", tipo !== "tabla");
+    }
+
+    function renderizarTabla() {
+      tituloListado.textContent = `${estado.tipo === "MERMAS" ? "Mermas" : "Devoluciones"} · ${tiendaSelect.value}`;
+      contador.textContent = `${estado.filtrados.length} registro${estado.filtrados.length === 1 ? "" : "s"}`;
+
+      if (!estado.filtrados.length) {
+        mensajeVacio.textContent = estado.registros.length
+          ? "No hay coincidencias con la búsqueda."
+          : `No se encontraron documentos en ${estado.tipo}.`;
+        mostrarEstado("vacio");
+        return;
+      }
+
+      cuerpoTabla.innerHTML = estado.filtrados.map((registro, indice) => `
+        <tr>
+          <td>${escapar(formatoFecha(registro.fecha))}</td>
+          <td><span class="etiqueta">${escapar(obtenerFolio(registro))}</span></td>
+          <td>${escapar(obtenerResponsable(registro.datos))}</td>
+          <td>${escapar(obtenerResumen(registro.datos))}</td>
+          <td>
+            <button class="boton boton-verde btn-ver" data-indice="${indice}">Ver / Imprimir</button>
+          </td>
+        </tr>
+      `).join("");
+
+      cuerpoTabla.querySelectorAll(".btn-ver").forEach(boton => {
+        boton.addEventListener("click", () => {
+          const registro = estado.filtrados[Number(boton.dataset.indice)];
+          abrirDocumento(registro);
+        });
+      });
+
+      mostrarEstado("tabla");
+    }
+
+    function esValorSimple(valor) {
+      return valor == null ||
+        typeof valor === "string" ||
+        typeof valor === "number" ||
+        typeof valor === "boolean" ||
+        valor instanceof Date ||
+        esTimestamp(valor);
+    }
+
+    function tituloCampo(campo) {
+      return String(campo)
+        .replaceAll("_", " ")
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/\b\w/g, letra => letra.toUpperCase());
+    }
+
+    function construirTablaArreglo(nombre, arreglo) {
+      if (!arreglo.length) return "";
+
+      const pareceProductos = normalizar(nombre).includes("producto") ||
+                              normalizar(nombre).includes("detalle") ||
+                              normalizar(nombre).includes("articulo") ||
+                              arreglo.some(item => codigoProducto(item));
+
+      if (pareceProductos) {
+        const objetos = arreglo.map(item => {
+          const base = item && typeof item === "object" && !Array.isArray(item)
+            ? { ...item }
+            : { codigo: item };
+
+          const codigo = codigoProducto(base);
+          const descripcionOriginal = descripcionProducto(base);
+          const descripcion = descripcionOriginal || descripcionCatalogo(codigo) || "Descripción no encontrada";
+
+          const salida = {};
+          salida.codigo = codigo || valorLegible(item);
+          salida.descripcion = descripcion;
+
+          for (const [clave, valor] of Object.entries(base)) {
+            const n = normalizar(clave);
+            const camposOcultos = [
+              "codigo", "código", "code", "barcode", "codigobarras", "codigo_barras",
+              "descripcion", "descripción", "concepto", "nombre", "articulo", "artículo", "detalle",
+              "departamento", "departamentoid", "departamento_id", "departamentoinfo",
+              "departamento_info", "marca", "unidad", "precioventa", "precio_venta",
+              "subtotalcosto", "subtotal_costo", "producto", "productoid", "producto_id", "id"
+            ].map(normalizar);
+
+            if (camposOcultos.includes(n)) continue;
+            salida[clave] = valor;
+          }
+          return salida;
+        });
+
+        const columnas = [...new Set(objetos.flatMap(Object.keys))];
+        const anchos = columnas.map(c => {
+          const n = normalizar(c);
+          if (n.includes("descripcion") || n.includes("coment")) return "16%";
+          if (n.includes("motivo") || n.includes("departamento")) return "12%";
+          if (n.includes("codigo")) return "10%";
+          if (n.includes("cantidad") || n.includes("unidad")) return "7%";
+          return "8%";
+        });
+
+        return `
+          <h3 class="seccion-titulo">${escapar(tituloCampo(nombre))}</h3>
+          <table class="tabla-documento">
+            <colgroup>${anchos.map(a => `<col style="width:${a}">`).join("")}</colgroup>
+            <thead>
+              <tr>${columnas.map(c => `<th>${escapar(tituloCampo(c))}</th>`).join("")}</tr>
+            </thead>
+            <tbody>
+              ${objetos.map(obj => `
+                <tr>${columnas.map(c => `<td>${htmlValor(obj[c])}</td>`).join("")}</tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+      }
+
+      if (arreglo.every(esValorSimple)) {
+        return `
+          <h3 class="seccion-titulo">${escapar(tituloCampo(nombre))}</h3>
+          <div class="nota">${arreglo.map(v => htmlValor(v)).join("<br>")}</div>
+        `;
+      }
+
+      const objetos = arreglo.map(item =>
+        item && typeof item === "object" && !Array.isArray(item) ? item : { valor:item }
+      );
+      const columnas = [...new Set(objetos.flatMap(Object.keys))];
+
+      return `
+        <h3 class="seccion-titulo">${escapar(tituloCampo(nombre))}</h3>
+        <table class="tabla-documento">
+          <thead>
+            <tr>${columnas.map(c => `<th>${escapar(tituloCampo(c))}</th>`).join("")}</tr>
+          </thead>
+          <tbody>
+            ${objetos.map(obj => `
+              <tr>${columnas.map(c => `<td>${htmlValor(obj[c])}</td>`).join("")}</tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function construirObjeto(nombre, objeto) {
+      const entradas = Object.entries(objeto || {});
+      if (!entradas.length) return "";
+
+      return `
+        <h3 class="seccion-titulo">${escapar(tituloCampo(nombre))}</h3>
+        <div class="datos-grid">
+          ${entradas.map(([clave,valor]) => `
+            <div class="dato">
+              <b>${escapar(tituloCampo(clave))}</b>
+              ${htmlValor(valor)}
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    async function abrirDocumento(registro) {
+      await cargarCatalogoProductos();
+
+      const tienda = tiendaSelect.value;
+      const tipoBonito = estado.tipo === "MERMAS" ? "MERMA" : "DEVOLUCIÓN";
+      const folio = obtenerFolio(registro);
+      const entradas = Object.entries(registro.datos);
+      const firma = buscarFirma(registro.datos);
+
+      const simples = entradas.filter(([clave,valor]) =>
+        esValorSimple(valor) && !normalizar(clave).includes("firma")
+      );
+      const arreglos = entradas.filter(([,valor]) => Array.isArray(valor));
+      const objetos = entradas.filter(([clave,valor]) =>
+        valor && typeof valor === "object" && !Array.isArray(valor) &&
+        !esTimestamp(valor) && !(valor instanceof Date) &&
+        !normalizar(clave).includes("firma")
+      );
+
+      hojaImpresion.innerHTML = `
+        <header class="doc-cabecera">
+          <div>
+            <h2>${escapar(tipoBonito)}</h2>
+            <p><b>Tienda:</b> ${escapar(tienda)}</p>
+          </div>
+          <div class="doc-folio">
+            <p><b>Folio / documento</b></p>
+            <p>${escapar(folio)}</p>
+          </div>
+        </header>
+
+        <section class="datos-grid">
+          <div class="dato"><b>Tipo de movimiento</b>${escapar(tipoBonito)}</div>
+          <div class="dato"><b>Fecha del movimiento</b>${escapar(formatoFecha(registro.fecha))}</div>
+          ${simples.map(([clave,valor]) => `
+            <div class="dato">
+              <b>${escapar(tituloCampo(clave))}</b>
+              ${htmlValor(valor)}
+            </div>
+          `).join("")}
+        </section>
+
+        ${arreglos.map(([nombre,valor]) => construirTablaArreglo(nombre,valor)).join("")}
+        ${objetos.map(([nombre,valor]) => construirObjeto(nombre,valor)).join("")}
+
+        ${firma ? `
+          <section class="firma-contenedor">
+            <h3>Firma registrada</h3>
+            <img class="imagen-firma" src="${escapar(firma)}" alt="Firma">
+            <div>Firma del responsable</div>
+          </section>
+        ` : `
+          <section class="firmas">
+            <div class="firma">Elaboró / Responsable</div>
+            <div class="firma">Autorizó / Recibió</div>
+          </section>
+        `}
+      `;
+
+      $("modalTitulo").textContent = `${tipoBonito} · ${folio}`;
+      modalFondo.classList.remove("oculto");
+      document.body.style.overflow = "hidden";
+    }
+
+    function cerrarModal() {
+      modalFondo.classList.add("oculto");
+      document.body.style.overflow = "";
+    }
+
+    document.querySelectorAll(".pestana").forEach(pestana => {
+      pestana.addEventListener("click", async () => {
+        document.querySelectorAll(".pestana").forEach(p => p.classList.remove("activa"));
+        pestana.classList.add("activa");
+        estado.tipo = pestana.dataset.tipo;
+        busquedaInput.value = "";
+        await cargarRegistros();
+      });
+    });
+
+    $("btnCargar").addEventListener("click", cargarRegistros);
+    tiendaSelect.addEventListener("change", cargarRegistros);
+    busquedaInput.addEventListener("input", aplicarFiltros);
+    ordenSelect.addEventListener("change", aplicarFiltros);
+    $("btnCerrar").addEventListener("click", cerrarModal);
+    $("btnImprimir").addEventListener("click", () => window.print());
+
+    modalFondo.addEventListener("click", evento => {
+      if (evento.target === modalFondo) cerrarModal();
+    });
+
+    document.addEventListener("keydown", evento => {
+      if (evento.key === "Escape") cerrarModal();
+    });
+
+    cargarTiendas();
+  </script>
+</body>
+</html>
