@@ -726,8 +726,8 @@
 
     .photo-preview {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
       margin-top: 15px;
     }
 
@@ -2296,9 +2296,10 @@
 
       y = addSectionTitle("4. EVIDENCIA FOTOGRÁFICA", y);
 
-      const photoWidth = 82;
-      const photoHeight = 58;
-      const gap = 8;
+      // Fotografías un poco más grandes para que la evidencia se aprecie mejor.
+      const photoWidth = 88;
+      const photoHeight = 64;
+      const gap = 6;
 
       for (let index = 0; index < selectedPhotos.length; index++) {
         const column = index % 2;
@@ -2371,7 +2372,7 @@
       const folio = $("#folioVisible").value || createFolio();
       const auditRef = doc(collection(db, "auditoria"));
       const data = getFormData(folio);
-      const pdfFileName = `${sanitizeFileName(folio)}.pdf`;
+      const pdfFileName = `${sanitizeFileName(data.sucursal)}_${sanitizeFileName(folio)}.pdf`;
 
       try {
         setLoading(true, "Generando PDF...");
